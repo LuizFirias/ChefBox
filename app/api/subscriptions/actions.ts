@@ -60,7 +60,8 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       external_reference: userId,
       payer_email: email,
       card_token_id: token,
-      payment_method_id: paymentMethodId, // ADICIONADO
+      payment_method_id: paymentMethodId,
+      issuer_id: Number(issuerId), // Converter para número
       auto_recurring: {
         frequency: freq.frequency,
         frequency_type: freq.frequency_type as 'months',
@@ -89,11 +90,13 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       identificationType,
       identificationNumber,
       paymentMethodId,
-      issuerId,
+      issuerId: Number(issuerId),
       token: token ? `${token.substring(0, 10)}...` : 'MISSING',
       amount,
       period,
     })
+
+    console.log('[subscription] Body completo:', JSON.stringify(subscriptionBody, null, 2))
 
     const subscription = await preapproval.create({
       body: subscriptionBody,
