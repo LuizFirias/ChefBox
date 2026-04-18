@@ -121,14 +121,44 @@ function normalizeRecipes(raws: unknown[]): Recipe[] {
   return raws.map(normalizeRecipe);
 }
 
+type RecipesWithTimestamp = {
+  recipes: Recipe[];
+  generatedAt: number;
+};
+
 export function getGeneratedRecipes() {
-  const recipes = normalizeRecipes(readJson<unknown[]>(GENERATED_RECIPES_KEY, []));
-  writeJson(GENERATED_RECIPES_KEY, recipes);
+  const data = readJson<RecipesWithTimestamp | unknown[]>(GENERATED_RECIPES_KEY, []);
+  
+  // Verificar se é o novo formato com timestamp
+  if (data && typeof data === 'object' && 'recipes' in data && 'generatedAt' in data) {
+    const { recipes, generatedAt } = data as RecipesWithTimestamp;
+    
+    // Verificar se já se passaram 24 horas (86400000 ms)
+    const now = Date.now();
+    const elapsed = now - generatedAt;
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    
+    if (elapsed > twentyFourHours) {
+      // Limpar receitas expiradas
+      writeJson(GENERATED_RECIPES_KEY, { recipes: [], generatedAt: now });
+      return [];
+    }
+    
+    const normalized = normalizeRecipes(recipes);
+    writeJson(GENERATED_RECIPES_KEY, { recipes: normalized, generatedAt });
+    return normalized;
+  }
+  
+  // Formato antigo (array direto) - converter para novo formato
+  const recipes = normalizeRecipes(Array.isArray(data) ? data : []);
+  const now = Date.now();
+  writeJson(GENERATED_RECIPES_KEY, { recipes, generatedAt: now });
   return recipes;
 }
 
 export function saveGeneratedRecipes(recipes: Recipe[]) {
-  writeJson(GENERATED_RECIPES_KEY, recipes);
+  const now = Date.now();
+  writeJson(GENERATED_RECIPES_KEY, { recipes, generatedAt: now });
 }
 
 export function getSavedRecipes() {

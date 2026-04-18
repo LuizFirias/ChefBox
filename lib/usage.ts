@@ -196,8 +196,25 @@ export async function getMealPlanUsage(
   const planInfo = await getUserPlanInfo(access.userId);
 
   if (!accessCheck.allowed || !planInfo) {
+    // Buscar quantos meal plans o usuário já gerou este mês (free: 1 por mês)
+    const admin = createSupabaseAdminClient();
+    const usageMonth = getMonthKey();
+    const subjectKey = `${access.subjectKey}:meal_plan`;
+    
+    let usedCount = 0;
+    if (admin) {
+      const { data: existing } = await admin
+        .from("usage_limits")
+        .select("used_count")
+        .eq("subject_key", subjectKey)
+        .eq("usage_date", usageMonth)
+        .maybeSingle();
+      
+      usedCount = existing?.used_count || 0;
+    }
+    
     return {
-      ...buildUsageState(0, 0, false, true),
+      ...buildUsageState(usedCount, 1, false, true),
       canGenerate: false,
     };
   }

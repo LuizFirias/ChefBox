@@ -8,7 +8,6 @@ import { PrepNotes } from "@/components/PrepNotes";
 import { ShoppingList } from "@/components/ShoppingList";
 import { PaywallModal } from "@/components/dashboard/paywall-modal";
 import { ProBadge, FeatureWithBadge } from "@/components/shared/pro-badge";
-import { PlanCard } from "@/components/shared/plan-card";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import {
   getMealPlan,
@@ -421,11 +420,6 @@ export function MealPlanPage() {
           </div>
         </header>
         
-        {/* Plan Card - mostra plano atual e contador de gerações */}
-        <div className="mb-6">
-          <PlanCard variant="compact" />
-        </div>
-        
         {/* Bloqueio de acesso para não-Pro */}
         {!accessLoading && !hasAccess && (
           <div className="mb-6 rounded-[32px] border-2 border-[#FF6B35] bg-gradient-to-br from-[#FFF9F3] to-[#FFE5D9] p-8 shadow-lg">
@@ -468,7 +462,7 @@ export function MealPlanPage() {
                   Limite mensal atingido
                 </p>
                 <p className="mt-1 text-sm text-amber-800">
-                  Você já gerou {usageInfo.used} planejamento este mês. Usuários gratuitos têm direito a 1 geração por mês.
+                  Você já gerou {usageInfo.used} {usageInfo.used === 1 ? 'planejamento' : 'planejamentos'} este mês. Usuários gratuitos têm direito a 1 geração por mês.
                 </p>
                 <button
                   onClick={() => setShowPaywall(true)}
