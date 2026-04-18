@@ -48,16 +48,26 @@ export async function createLifetimePixPayment(userId: string) {
       return { error: 'Erro ao gerar PIX' }
     }
 
+    if (!response.id) {
+      return { error: 'Erro ao criar pagamento' }
+    }
+
     const pixData = response.point_of_interaction.transaction_data
 
     // Salvar pagamento pendente no banco
     await admin.from('yampi_transactions').insert({
       user_id: userId,
       yampi_transaction_id: `mp_${response.id}`,
-      status: 'pending',
-      plan: 'lifetime',
+      plan_id: 'lifetime',
+      plan_name: 'Vitalício',
       amount: 37.00,
+      currency: 'BRL',
+      status: 'pending',
       payment_method: 'pix',
+      metadata: {
+        mp_payment_id: response.id.toString(),
+        plan: 'lifetime',
+      },
     })
 
     return {
