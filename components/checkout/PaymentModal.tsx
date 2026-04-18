@@ -138,6 +138,15 @@ export default function PaymentModal({
             identificationType,
           } = form.getCardFormData()
 
+          console.log('[CardForm] Dados capturados:', {
+            paymentMethodId,
+            issuerId,
+            email,
+            token: token ? `${token.substring(0, 10)}...` : 'MISSING',
+            identificationNumber,
+            identificationType,
+          })
+
           // Garantir que identificationType seja 'CPF' se não vier preenchido
           const finalIdentificationType = identificationType || 'CPF'
 

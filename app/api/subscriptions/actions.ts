@@ -60,6 +60,7 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       external_reference: userId,
       payer_email: email,
       card_token_id: token,
+      payment_method_id: paymentMethodId, // ADICIONADO
       auto_recurring: {
         frequency: freq.frequency,
         frequency_type: freq.frequency_type as 'months',
@@ -87,6 +88,9 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       email,
       identificationType,
       identificationNumber,
+      paymentMethodId,
+      issuerId,
+      token: token ? `${token.substring(0, 10)}...` : 'MISSING',
       amount,
       period,
     })
