@@ -203,6 +203,26 @@ export default function PlanosPage() {
             planejamento de refeições e análise nutricional completa.
           </p>
 
+          {/* Botão de Teste - APENAS PARA DESENVOLVIMENTO */}
+          {user && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentModalState({
+                    isOpen: true,
+                    plan: 'test',
+                    period: 'monthly',
+                    price: 1.00
+                  })
+                }}
+                className="rounded-xl bg-purple-600 px-6 py-3 text-sm font-bold text-white hover:bg-purple-700 shadow-lg"
+              >
+                🧪 TESTE - Assinatura R$ 1,00/mês (Deletar depois)
+              </button>
+            </div>
+          )}
+
           {/* Seletor de período */}
           <div className="mt-8 inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
             {(["anual", "trimestral", "mensal"] as PlanPeriod[]).map((period) => (
