@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAccessControl, useRecipeUsage } from "@/lib/hooks/useAccessControl";
 import { ProBadge } from "@/components/shared/pro-badge";
 import { UsageIndicator } from "@/components/shared/usage-indicator";
+import { PlanCard } from "@/components/shared/plan-card";
 
 type AccountScreenProps = {
   isPremium: boolean;
@@ -143,6 +144,9 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
           Use esta área para revisar o e-mail, ajustar dados pessoais e acompanhar o plano atual.
         </p>
       </article>
+
+      {/* Plan Card - mostra plano atual e contador de gerações */}
+      <PlanCard variant="full" />
 
       <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">

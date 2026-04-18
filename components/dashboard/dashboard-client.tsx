@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { PaywallModal } from "@/components/dashboard/paywall-modal";
 import { RecipeCard } from "@/components/dashboard/recipe-card";
+import { PlanCard } from "@/components/shared/plan-card";
 import { QUICK_INGREDIENTS } from "@/lib/config";
 import { mergeIngredients } from "@/lib/ingredients";
 import { recipePreferenceOptions } from "@/lib/types";
@@ -131,6 +132,11 @@ export function DashboardClient() {
             <p className="mt-4 text-sm leading-6 text-stone-700">
               Misture ingredientes avulsos, gere receitas em segundos e refine com um toque.
             </p>
+
+            {/* Plan Card - mostra plano atual e contador de gerações */}
+            <div className="mt-6">
+              <PlanCard variant="compact" />
+            </div>
 
             <label className="mt-6 block text-sm font-medium text-stone-800">
               Ingredientes livres

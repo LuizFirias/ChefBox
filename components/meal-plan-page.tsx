@@ -8,6 +8,7 @@ import { PrepNotes } from "@/components/PrepNotes";
 import { ShoppingList } from "@/components/ShoppingList";
 import { PaywallModal } from "@/components/dashboard/paywall-modal";
 import { ProBadge, FeatureWithBadge } from "@/components/shared/pro-badge";
+import { PlanCard } from "@/components/shared/plan-card";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import {
   getMealPlan,
@@ -419,6 +420,11 @@ export function MealPlanPage() {
             </div>
           </div>
         </header>
+        
+        {/* Plan Card - mostra plano atual e contador de gerações */}
+        <div className="mb-6">
+          <PlanCard variant="compact" />
+        </div>
         
         {/* Bloqueio de acesso para não-Pro */}
         {!accessLoading && !hasAccess && (

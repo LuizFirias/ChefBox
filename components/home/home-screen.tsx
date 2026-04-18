@@ -27,6 +27,7 @@ import { SavedRecipesScreen } from "@/components/home/saved-recipes-screen";
 import { MealPlanPage } from "@/components/meal-plan-page";
 import { AppButton } from "@/components/ui/app-button";
 import { UsageIndicator } from "@/components/shared/usage-indicator";
+import { PlanCard } from "@/components/shared/plan-card";
 import { mergeIngredients } from "@/lib/ingredients";
 import type { Recipe, UsageState, ShoppingList } from "@/lib/types";
 
@@ -479,6 +480,9 @@ export function HomeScreen() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
               {/* LEFT COLUMN - Input & CTA */}
               <div className="space-y-5">
+                {/* Plan Card - mostra plano atual e contador de gerações */}
+                <PlanCard variant="compact" />
+
                 <IngredientInput
                   inputValue={inputValue}
                   onInputChange={setInputValue}
