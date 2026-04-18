@@ -66,6 +66,14 @@ export async function createSubscription(params: CreateSubscriptionParams) {
         transaction_amount: amount,
         currency_id: 'BRL',
       },
+      // IMPORTANTE: payer com identification é obrigatório para validação do cartão
+      payer: {
+        email: email,
+        identification: {
+          type: identificationType,
+          number: identificationNumber,
+        },
+      },
       status: 'authorized',
     }
     
@@ -73,6 +81,15 @@ export async function createSubscription(params: CreateSubscriptionParams) {
     if (!isLocalhost) {
       subscriptionBody.back_url = `${appUrl}/dashboard`
     }
+
+    console.log('[subscription] Criando assinatura com:', {
+      reason: subscriptionBody.reason,
+      email,
+      identificationType,
+      identificationNumber,
+      amount,
+      period,
+    })
 
     const subscription = await preapproval.create({
       body: subscriptionBody,
@@ -118,6 +135,7 @@ export async function createSubscription(params: CreateSubscriptionParams) {
 
   } catch (error: any) {
     console.error('[subscription] Erro ao criar:', error)
+    console.error('[subscription] Detalhes:', JSON.stringify(error, null, 2))
 
     // Tratamento de erros específicos do MP
     if (error?.cause?.[0]?.code === '2001') {
