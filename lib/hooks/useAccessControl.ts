@@ -6,11 +6,11 @@ import type { Feature } from "@/lib/types";
 type AccessCheckResult = {
   allowed: boolean;
   reason?: string;
-  planType?: "lifetime" | "basic" | "pro" | null;
+  planType?: "lifetime" | "basic" | "pro" | "test" | null;
 };
 
 type UserPlanInfo = {
-  planType: "lifetime" | "basic" | "pro" | null;
+  planType: "lifetime" | "basic" | "pro" | "test" | null;
   planStatus: "active" | "cancelled" | "expired" | null;
   recipeGenerationsUsed: number;
   recipeGenerationsLimit: number;
@@ -113,7 +113,7 @@ export function useAccessControl(feature?: Feature) {
     reason: accessCheck.reason,
     planType: accessCheck.planType || planInfo?.planType,
     planInfo,
-    isPremium: accessCheck.planType === "pro" || accessCheck.planType === "basic",
+    isPremium: accessCheck.planType === "pro" || accessCheck.planType === "basic" || accessCheck.planType === "test",
     isPro: accessCheck.planType === "pro",
     isBasic: accessCheck.planType === "basic",
     isLifetime: accessCheck.planType === "lifetime",

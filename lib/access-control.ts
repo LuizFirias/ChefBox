@@ -52,7 +52,7 @@ export async function canAccessFeature(
       if (planType === "lifetime") {
         return { allowed: false, reason: "Plano Lifetime n\u00e3o inclui gera\u00e7\u00e3o com IA" };
       }
-      if (planType === "basic") {
+      if (planType === "basic" || planType === "test") {
         if (planInfo.recipeGenerationsUsed >= 60) {
           return { allowed: false, reason: "Limite de 60 receitas/m\u00eas atingido" };
         }
@@ -176,7 +176,7 @@ export async function incrementRecipeGeneration(userId: string): Promise<boolean
     return true;
   }
 
-  if (planInfo.planType === "basic") {
+  if (planInfo.planType === "basic" || planInfo.planType === "test") {
     if (planInfo.recipeGenerationsUsed >= 60) {
       return false;
     }

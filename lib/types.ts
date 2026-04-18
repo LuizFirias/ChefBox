@@ -157,7 +157,7 @@ export type ShoppingList = {
 
 // ─── Plans & Subscriptions ────────────────────────────────────────────────
 
-export type PlanType = "lifetime" | "basic" | "pro";
+export type PlanType = "lifetime" | "basic" | "pro" | "test";
 export type PlanPeriod = "lifetime" | "monthly" | "quarterly" | "annual";
 export type PlanStatus = "active" | "cancelled" | "expired" | "past_due" | "trialing";
 
