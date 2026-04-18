@@ -51,15 +51,19 @@ export default function PaymentModal({
   useEffect(() => {
     if (!isOpen) return
 
+    const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!
+    console.log('[PaymentModal] Public Key:', publicKey?.substring(0, 15) + '...')
+
     const script = document.createElement('script')
     script.src = 'https://sdk.mercadopago.com/js/v2'
     script.async = true
     script.onload = () => {
       const mpInstance = new window.MercadoPago(
-        process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!,
+        publicKey,
         { locale: 'pt-BR' }
       )
       setMp(mpInstance)
+      console.log('[PaymentModal] MercadoPago SDK initialized')
     }
     document.body.appendChild(script)
 
