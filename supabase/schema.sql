@@ -5,6 +5,8 @@ create table if not exists public.users (
   email text unique,
   full_name text,
   avatar_url text,
+  weight text,
+  height text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -29,6 +31,16 @@ create table if not exists public.saved_recipes (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.saved_meal_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  name text not null,
+  payload jsonb not null,
+  settings jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users (id) on delete cascade,
@@ -38,6 +50,21 @@ create table if not exists public.subscriptions (
   current_period_end timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists public.daily_meals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  meal_date date not null default current_date,
+  meal_type text not null check (meal_type in ('breakfast', 'lunch', 'snack', 'dinner')),
+  items jsonb not null,
+  total_calories integer not null,
+  total_protein_g numeric(6,2) not null,
+  total_carbs_g numeric(6,2) not null,
+  total_fat_g numeric(6,2) not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, meal_date, meal_type)
 );
 
 create or replace function public.handle_new_user()
@@ -73,7 +100,10 @@ create trigger on_auth_user_created
 alter table public.users enable row level security;
 alter table public.usage_limits enable row level security;
 alter table public.saved_recipes enable row level security;
+alter table public.saved_meal_plans enable row level security;
 alter table public.subscriptions enable row level security;
+
+create index if not exists idx_saved_meal_plans_user_id on public.saved_meal_plans(user_id, created_at desc);
 
 drop policy if exists "Users can read own profile" on public.users;
 create policy "Users can read own profile"
@@ -103,6 +133,26 @@ with check (auth.uid() = user_id);
 drop policy if exists "Users can delete own saved recipes" on public.saved_recipes;
 create policy "Users can delete own saved recipes"
 on public.saved_recipes for delete
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can read own meal plans" on public.saved_meal_plans;
+create policy "Users can read own meal plans"
+on public.saved_meal_plans for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can write own meal plans" on public.saved_meal_plans;
+create policy "Users can write own meal plans"
+on public.saved_meal_plans for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own meal plans" on public.saved_meal_plans;
+create policy "Users can update own meal plans"
+on public.saved_meal_plans for update
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own meal plans" on public.saved_meal_plans;
+create policy "Users can delete own meal plans"
+on public.saved_meal_plans for delete
 using (auth.uid() = user_id);
 
 drop policy if exists "Users can read own subscriptions" on public.subscriptions;

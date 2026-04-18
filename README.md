@@ -82,13 +82,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 AI_API_URL=https://api.openai.com/v1
 AI_API_KEY=
-AI_MODEL=gpt-4.1-mini
+AI_MODEL_BASE=gpt-5.4-nano
+AI_MODEL_PREMIUM=gpt-5.4
+AI_MAX_OUTPUT_TOKENS=500
+AI_CACHE_TTL_SECONDS=900
 ```
 
 Notas práticas:
 
 - sem `AI_API_KEY`, a API cai automaticamente no mock local para facilitar demo
 - sem `SUPABASE_SERVICE_ROLE_KEY`, o app funciona, mas o limite diário não fica persistido no banco
+- receitas padrão usam o modelo base; meal plan, premium e fallback sobem para o modelo premium
 
 ## Endpoints
 

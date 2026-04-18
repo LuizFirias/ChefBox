@@ -1,8 +1,88 @@
 @import "tailwindcss";
 
 :root {
+  /* === BACKGROUND COLORS === */
   --background: #f7f9fb;
   --foreground: #2d3142;
+
+  /* === PRIMARY COLORS === */
+  --color-primary: #F4713A;
+  --color-primary-hover: #E85D20;
+  --color-primary-light: #FFF4EE;
+  --color-primary-border: #FDDCC8;
+
+  /* === NEUTRAL COLORS === */
+  --color-dark: #2D3142;
+  --color-dark-hover: #1E2233;
+
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+
+  /* === BACKGROUND TOKENS === */
+  --bg-app: #F7F8FA;
+  --bg-card: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --bg-input-readonly: #F9FAFB;
+
+  /* === BORDER TOKENS === */
+  --border-light: #F0F0F0;
+  --border-default: #E5E7EB;
+  --border-focus: #F4713A;
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
+
+  /* === SHADOW TOKENS === */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+  --shadow-primary: 0 4px 14px rgba(244, 113, 58, 0.35);
+
+  /* === SPACING === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* === TYPOGRAPHY === */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --text-inverse: #FFFFFF;
+
+  /* === TRANSITIONS === */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* === HEADER HEIGHT === */
+  --header-height: 60px;
 }
 
 @theme inline {
@@ -50,4 +130,81 @@ summary {
 button,
 summary {
   cursor: pointer;
+}
+
+/* === UTILITY CLASSES === */
+.section-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+/* === MICRO-INTERACTIONS === */
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.card-interactive {
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Loading state */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(244, 113, 58, 0.1);
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
 }

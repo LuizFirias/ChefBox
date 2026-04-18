@@ -23,6 +23,7 @@ export function DashboardClient() {
     "arroz",
   ]);
   const [preferences, setPreferences] = useState<RecipePreference[]>([]);
+  const [servings, setServings] = useState(2);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [usage, setUsage] = useState<UsageState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +61,13 @@ export function DashboardClient() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Request-Time": Date.now().toString(),
         },
+        cache: "no-store",
         body: JSON.stringify({
           ingredients,
           preferences: nextPreferences,
-          servings: 2,
+          servings,
         }),
       });
 
@@ -186,6 +189,27 @@ export function DashboardClient() {
                 })}
               </div>
             </div>
+
+            <label className="mt-6 block text-sm font-medium text-stone-800">
+              Número de pessoas
+              <div className="mt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setServings(Math.max(1, servings - 1))}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-lg font-semibold text-stone-700 transition hover:bg-stone-50"
+                >
+                  −
+                </button>
+                <span className="text-xl font-semibold text-stone-900">{servings}</span>
+                <button
+                  type="button"
+                  onClick={() => setServings(Math.min(8, servings + 1))}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-lg font-semibold text-stone-700 transition hover:bg-stone-50"
+                >
+                  +
+                </button>
+              </div>
+            </label>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button

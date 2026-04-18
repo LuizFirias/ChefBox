@@ -60,7 +60,7 @@ export function FilterModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#2D3142]/30 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#2D3142]/30 backdrop-blur-[2px]">
       <button
         type="button"
         aria-label="Fechar filtros"
@@ -68,7 +68,7 @@ export function FilterModal({
         className="absolute inset-0"
       />
 
-      <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px] rounded-t-[32px] bg-white px-5 pb-6 pt-5 shadow-[0_-18px_52px_rgba(45,49,66,0.18)]">
+      <div className="relative mx-auto w-full max-w-[430px] max-h-[85vh] overflow-y-auto rounded-t-[32px] bg-white px-5 pb-6 pt-5 shadow-[0_-18px_52px_rgba(45,49,66,0.18)]">
         <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200" />
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[#2D3142]">Filtros da receita</h2>

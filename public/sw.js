@@ -1,6 +1,6 @@
 const CACHE_NAME = "chefbox-shell-v2";
 const OFFLINE_URL = "/offline";
-const PRECACHE_URLS = [OFFLINE_URL, "/icon.svg", "/manifest.webmanifest"];
+const PRECACHE_URLS = [OFFLINE_URL, "/icon.svg"];
 
 function shouldHandleRequest(request) {
   const requestUrl = new URL(request.url);
@@ -28,7 +28,13 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => {
+        return cache.addAll(PRECACHE_URLS).catch((error) => {
+          console.warn("Cache pre-population failed:", error);
+          // Continue installation even if pre-cache fails
+          return Promise.resolve();
+        });
+      })
       .then(() => self.skipWaiting()),
   );
 });
@@ -72,11 +78,22 @@ self.addEventListener("fetch", (event) => {
 
           caches
             .open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, responseClone));
+            .then((cache) => cache.put(event.request, responseClone))
+            .catch(() => {
+              /* Silent cache failure */
+            });
 
           return networkResponse;
         })
         .catch(() => caches.match("/icon.svg"));
     }),
   );
+});
+
+// Handle messages from client
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+  // Don't return true - no async response needed
 });

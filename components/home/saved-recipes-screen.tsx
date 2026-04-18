@@ -1,35 +1,104 @@
 import Link from "next/link";
+import { useState } from "react";
 
 import type { Recipe } from "@/lib/types";
+import type { SavedMealPlan } from "@/lib/app-storage";
+import { SavedMealPlansSection } from "@/components/home/saved-meal-plans-section";
 
 type SavedRecipesScreenProps = {
   recipes: Recipe[];
   onRemoveRecipe: (recipeId: string) => void;
+  mealPlans: SavedMealPlan[];
+  onRemoveMealPlan: (planId: string) => void;
+  onCreateShoppingList?: (plan: SavedMealPlan) => void;
 };
 
 export function SavedRecipesScreen({
   recipes,
   onRemoveRecipe,
+  mealPlans,
+  onRemoveMealPlan,
+  onCreateShoppingList,
 }: SavedRecipesScreenProps) {
-  if (recipes.length === 0) {
+  const [activeTab, setActiveTab] = useState<"recipes" | "plans">("recipes");
+
+  if (recipes.length === 0 && mealPlans.length === 0) {
     return (
-      <section className="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-white/90 p-6 text-center shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-          Salvos
+      <section className="mt-6 flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white p-12 text-center shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
+          🔖
+        </div>
+        <h3 className="mt-5 text-xl font-bold text-[#1A1A2E]">
+          Nenhum item salvo ainda
+        </h3>
+        <p className="mt-2 max-w-xs text-sm leading-6 text-[#6B7280]">
+          Quando você salvar receitas ou planejamentos, eles aparecem aqui para consultar depois.
         </p>
-        <h2 className="mt-2 text-2xl font-bold text-[#2D3142]">
-          Nenhuma receita salva ainda
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-500">
-          Quando você salvar uma sugestão gerada, ela aparece aqui para consultar depois.
-        </p>
+        <button
+          type="button"
+          onClick={() => {
+            const receitasTab = document.querySelector('[data-tab="receitas"]') as HTMLButtonElement;
+            receitasTab?.click();
+          }}
+          className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl border-none bg-[#F4713A] px-7 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#E85D20] hover:shadow-lg active:scale-95"
+        >
+          Explorar receitas
+        </button>
       </section>
     );
   }
 
   return (
-    <section className="mt-6 space-y-3">
-      {recipes.map((recipe) => (
+    <section className="mt-6 space-y-4">
+      <div className="flex gap-2 rounded-[28px] border border-slate-200 bg-white p-1.5">
+        <button
+          type="button"
+          onClick={() => setActiveTab("recipes")}
+          className={`flex-1 rounded-[20px] py-2.5 text-sm font-semibold transition-colors ${
+            activeTab === "recipes"
+              ? "bg-[#2D3142] text-white"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Receitas ({recipes.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("plans")}
+          className={`flex-1 rounded-[20px] py-2.5 text-sm font-semibold transition-colors ${
+            activeTab === "plans"
+              ? "bg-[#2D3142] text-white"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Planejamentos ({mealPlans.length})
+        </button>
+      </div>
+
+      {activeTab === "recipes" && recipes.length === 0 && (
+        <div className="flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white p-12 text-center shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
+            📖
+          </div>
+          <h3 className="mt-5 text-xl font-bold text-[#1A1A2E]">
+            Nenhuma receita salva ainda
+          </h3>
+          <p className="mt-2 max-w-xs text-sm leading-6 text-[#6B7280]">
+            Quando você salvar uma receita, ela aparece aqui.
+          </p>
+        </div>
+      )}
+
+      {activeTab === "plans" && (
+        <SavedMealPlansSection
+          plans={mealPlans}
+          onCreateShoppingList={onCreateShoppingList}
+          onRemovePlan={onRemoveMealPlan}
+        />
+      )}
+
+      {activeTab === "recipes" && recipes.length > 0 && (
+        <div className="space-y-3">{recipes.map((recipe) => (
         <article
           key={recipe.id}
           className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_rgba(45,49,66,0.06)]"
@@ -54,12 +123,12 @@ export function SavedRecipesScreen({
               <p>pessoas</p>
             </div>
             <div className="rounded-2xl bg-[#F7F9FB] px-3 py-2 text-center">
-              <p className="font-semibold text-[#2D3142]">{recipe.ingredients.length}</p>
+              <p className="font-semibold text-[#2D3142]">{recipe.protein.ingredients.length + (recipe.base?.reduce((s, b) => s + b.ingredients.length, 0) ?? 0)}</p>
               <p>itens</p>
             </div>
             <div className="rounded-2xl bg-[#EEF5EE] px-3 py-2 text-center">
-              <p className="font-semibold text-[#4D7C4F]">{recipe.estimatedCost}</p>
-              <p>custo</p>
+              <p className="font-semibold text-[#4D7C4F]">{recipe.prepTime}</p>
+              <p>tempo</p>
             </div>
           </div>
 
@@ -80,6 +149,8 @@ export function SavedRecipesScreen({
           </div>
         </article>
       ))}
+        </div>
+      )}
     </section>
   );
 }

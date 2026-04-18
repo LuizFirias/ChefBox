@@ -5,66 +5,47 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 
 import {
+  getGeneratedRecipes,
   getSavedRecipes,
   removeSavedRecipe,
   saveGeneratedRecipes,
   saveRecipe,
+  getSavedMealPlans,
+  removeSavedMealPlan,
+  getShoppingLists,
+  deleteShoppingList,
+  updateShoppingList,
+  type SavedMealPlan,
 } from "@/lib/app-storage";
-import { FilterModal } from "@/components/home/filter-modal";
 import { AccountScreen } from "@/components/home/account-screen";
 import { HistoryCard } from "@/components/home/history-card";
 import { IngredientInput } from "@/components/home/ingredient-input";
 import { ListsScreen } from "@/components/home/lists-screen";
+import { MacroCalculatorScreen } from "@/components/home/macro-calculator-screen";
 import { RecipeCard } from "@/components/home/recipe-card";
 import { SavedRecipesScreen } from "@/components/home/saved-recipes-screen";
+import { MealPlanPage } from "@/components/meal-plan-page";
 import { AppButton } from "@/components/ui/app-button";
+import { UsageIndicator } from "@/components/shared/usage-indicator";
 import { mergeIngredients } from "@/lib/ingredients";
-import type { Recipe, UsageState } from "@/lib/types";
+import type { Recipe, UsageState, ShoppingList } from "@/lib/types";
 
 type GenerateRecipesPayload = {
   recipes: Recipe[];
   usage: UsageState;
   source: "ai" | "fallback";
+  unusedIngredients?: string[];
 };
 
-type FilterState = {
-  time: string[];
-  diet: string[];
-  allergies: string[];
-  goals: string[];
-  dishTypes: string[];
-};
+type TabId = "receitas" | "planner" | "saved" | "lists" | "macros" | "account";
 
-type TabId = "home" | "saved" | "lists" | "account";
-
-const initialFilters: FilterState = {
-  time: [],
-  diet: [],
-  allergies: [],
-  goals: ["Rápido"],
-  dishTypes: [],
-};
-
-const historyItems = [
-  {
-    title: "Arroz cremoso de frango com tomate",
-    time: "25 min",
-    ingredientsCount: 6,
-    dateLabel: "24 Mar",
-  },
-  {
-    title: "Nasi liwet de frigideira",
-    time: "15 min",
-    ingredientsCount: 4,
-    dateLabel: "17 Mar",
-  },
-];
-
-function HomeIcon() {
+// Ícone de utensílios de cozinha
+function ReceitasIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
-      <path d="m4 11 8-6 8 6" />
-      <path d="M6 10.5V19h12v-8.5" />
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
     </svg>
   );
 }
@@ -77,15 +58,23 @@ function BookmarkIcon() {
   );
 }
 
-function ListIcon() {
+function CartIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
-      <path d="M8 7h11" />
-      <path d="M8 12h11" />
-      <path d="M8 17h11" />
-      <path d="M4 7h.01" />
-      <path d="M4 12h.01" />
-      <path d="M4 17h.01" />
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4" />
+      <path d="M8 2v4" />
+      <path d="M3 10h18" />
     </svg>
   );
 }
@@ -100,84 +89,205 @@ function UserIcon() {
   );
 }
 
+function MacrosIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M9 9h6" />
+      <path d="M9 12h6" />
+      <path d="M9 15h6" />
+      <circle cx="6" cy="9" r="0.5" fill="currentColor" />
+      <circle cx="6" cy="12" r="0.5" fill="currentColor" />
+      <circle cx="6" cy="15" r="0.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function HomeScreen() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [activeTab, setActiveTab] = useState<TabId>("receitas");
   const [inputValue, setInputValue] = useState("");
   const [servings, setServings] = useState(2);
-  const [selectedIngredients, setSelectedIngredients] = useState([
-    "Frango",
-    "Ovo",
-    "Cebola",
-  ]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [dishType, setDishType] = useState<"breakfast" | "lunch" | "snack" | "dinner">("lunch");
+  const [diet, setDiet] = useState<string>("");
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [unusedIngredients, setUnusedIngredients] = useState<string[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
+  const [savedMealPlans, setSavedMealPlans] = useState<SavedMealPlan[]>([]);
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
+  const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([]);
+  const [isPremium, setIsPremium] = useState(false);
+  const [hasLoadedAccess, setHasLoadedAccess] = useState(false);
   const [usage, setUsage] = useState<UsageState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedParams, setConfirmedParams] = useState<{
+    ingredients: string[];
+    servings: number;
+    dishType: string;
+    diet?: string;
+  } | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    // Carregar receitas geradas do localStorage (só desaparecem ao gerar novas)
+    setRecipes(getGeneratedRecipes());
     setSavedRecipes(getSavedRecipes());
+    setShoppingLists(getShoppingLists());
+    
+    // Load saved meal plans from API (with localStorage fallback)
+    loadSavedMealPlans();
+
+    // Listen for meal plan save events from other components
+    window.addEventListener("mealPlanSaved", handleMealPlanSaved);
+    window.addEventListener("shoppingListCreated", handleShoppingListCreated);
+
+    let cancelled = false;
+
+    function handleMealPlanSaved() {
+      console.log("[home-screen] Received mealPlanSaved event, reloading...");
+      loadSavedMealPlans();
+    }
+
+    function handleShoppingListCreated() {
+      console.log("[home-screen] Received shoppingListCreated event, reloading...");
+      setShoppingLists(getShoppingLists());
+    }
+
+    async function loadSavedMealPlans() {
+      try {
+        const response = await fetch("/api/saved-meal-plans", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (!cancelled && data.plans) {
+            // Convert API format to SavedMealPlan format
+            const formattedPlans: SavedMealPlan[] = data.plans.map((p: any) => ({
+              ...p.payload,
+              id: p.id,
+              name: p.name,
+              savedAt: new Date(p.created_at).getTime(),
+              settings: p.settings,
+            }));
+            setSavedMealPlans(formattedPlans);
+          }
+        } else if (response.status === 401) {
+          // Not logged in, use localStorage fallback
+          if (!cancelled) {
+            setSavedMealPlans(getSavedMealPlans());
+          }
+        }
+      } catch (error) {
+        // Fallback to localStorage if API fails
+        if (!cancelled) {
+          setSavedMealPlans(getSavedMealPlans());
+        }
+      }
+    }
+
+    async function loadAccessStatus() {
+      try {
+        const response = await fetch("/api/access-status", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          if (!cancelled) {
+            setHasLoadedAccess(true);
+          }
+          return;
+        }
+
+        const payload = (await response.json()) as { isPremium?: boolean };
+
+        if (!cancelled) {
+          setIsPremium(Boolean(payload.isPremium));
+          setHasLoadedAccess(true);
+        }
+      } catch {
+        // Keep the default free state if the access check fails.
+        if (!cancelled) {
+          setHasLoadedAccess(true);
+        }
+      }
+    }
+
+    async function loadRecentRecipes() {
+      try {
+        const response = await fetch("/api/recent-recipes", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { recipes: Recipe[] };
+
+        if (!cancelled && payload.recipes) {
+          setRecentRecipes(payload.recipes);
+        }
+      } catch (error) {
+        console.error("Failed to load recent recipes:", error);
+      }
+    }
+
+    void loadAccessStatus();
+    void loadRecentRecipes();
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("mealPlanSaved", handleMealPlanSaved);
+      window.removeEventListener("shoppingListCreated", handleShoppingListCreated);
+    };
   }, []);
 
+  const premiumActive = usage?.isPremium ?? isPremium;
+
   const navItems = [
-    { id: "home" as const, label: "Home", icon: <HomeIcon /> },
+    { id: "receitas" as const, label: "Receitas", icon: <ReceitasIcon /> },
+    { id: "planner" as const, label: "Planejador", icon: <CalendarIcon /> },
     { id: "saved" as const, label: "Salvos", icon: <BookmarkIcon /> },
-    { id: "lists" as const, label: "Listas", icon: <ListIcon /> },
+    { id: "lists" as const, label: "Mercado", icon: <CartIcon /> },
+    { id: "macros" as const, label: "Macros", icon: <MacrosIcon /> },
     { id: "account" as const, label: "Conta", icon: <UserIcon /> },
   ];
 
   if (!mounted) {
     return (
-      <main className="mx-auto flex w-full max-w-107.5 flex-1 flex-col px-4 pb-24 pt-6 sm:px-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="flex min-h-20 flex-1 items-center md:hidden">
-            <Image
-              src="/header%201200x400%20transparente.png"
-              alt="ChefBox"
-              width={260}
-              height={88}
-              className="h-16 w-auto object-contain object-left"
-              priority
-            />
-          </div>
-
-          <div className="hidden md:block">
-            <h1 className="max-w-[12ch] text-4xl font-bold leading-[1.02] text-[#2D3142]">
-              Não sabe o que cozinhar hoje?
-            </h1>
-            <p className="mt-3 max-w-[28ch] text-sm leading-6 text-slate-500">
-              Gere uma sugestão objetiva com custo estimado, porções e preparo sem enrolação.
-            </p>
-          </div>
-
-          <div className="flex h-12 w-12 shrink-0 rounded-full border border-slate-200 bg-white shadow-[0_12px_24px_rgba(45,49,66,0.06)]" />
+      <main className="mx-auto flex w-full flex-1 flex-col px-4 pb-24 pt-4 sm:px-6 md:max-w-7xl md:pt-8">
+        {/* Mobile header skeleton */}
+        <header className="mb-3 flex items-center justify-center md:hidden">
+          <div className="h-20 w-64 rounded-lg bg-slate-100" />
         </header>
 
-        <section className="mt-6 rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-[0_18px_40px_rgba(45,49,66,0.08)]">
-          <div className="h-5 w-32 rounded-full bg-slate-100" />
-          <div className="mt-4 flex flex-wrap gap-2">
-            {selectedIngredients.map((ingredient) => (
-              <div
-                key={ingredient}
-                className="inline-flex h-9 w-20 rounded-full bg-slate-100"
-              />
-            ))}
+        {/* 2-column skeleton */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
+          {/* Left column */}
+          <div className="space-y-5">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
+              <div className="h-5 w-32 rounded-full bg-slate-100" />
+              <div className="mt-4 flex flex-wrap gap-2">
+                <div className="h-9 w-20 rounded-full bg-slate-100" />
+                <div className="h-9 w-16 rounded-full bg-slate-100" />
+                <div className="h-9 w-24 rounded-full bg-slate-100" />
+              </div>
+              <div className="mt-4 h-14 rounded-2xl bg-slate-100" />
+            </div>
+
+            <div className="h-16 rounded-2xl bg-[#FF6B35]/10" />
           </div>
-          <div className="mt-4 h-14 rounded-2xl bg-slate-100" />
-          <div className="mt-4 h-14 rounded-2xl bg-[#FF6B35]/12" />
-        </section>
 
-        <section className="mt-5 h-36 rounded-[28px] bg-[#FF6B35] p-4 opacity-90" />
-
-        <section className="mt-6 space-y-3">
-          <div className="h-6 w-24 rounded-full bg-slate-100" />
-          <div className="h-28 rounded-[28px] bg-white/90 shadow-[0_18px_40px_rgba(45,49,66,0.08)]" />
-          <div className="h-28 rounded-[28px] bg-white/90 shadow-[0_18px_40px_rgba(45,49,66,0.08)]" />
-        </section>
+          {/* Right column */}
+          <div className="hidden space-y-4 md:block">
+            <div className="h-48 rounded-3xl bg-slate-50" />
+            <div className="h-48 rounded-3xl bg-slate-50" />
+          </div>
+        </div>
       </main>
     );
   }
@@ -196,28 +306,85 @@ export function HomeScreen() {
     setSelectedIngredients((current) => current.filter((item) => item !== ingredient));
   }
 
-  function toggleFilter(group: keyof FilterState, option: string) {
-    setFilters((current) => ({
-      ...current,
-      [group]: current[group].includes(option)
-        ? current[group].filter((item) => item !== option)
-        : [...current[group], option],
-    }));
-  }
-
-  function clearFilters() {
-    setFilters(initialFilters);
-  }
-
   function handleSaveRecipe(recipe: Recipe) {
     setSavedRecipes(saveRecipe(recipe));
+    setActiveTab("saved");
   }
 
   function handleRemoveSavedRecipe(recipeId: string) {
     setSavedRecipes(removeSavedRecipe(recipeId));
   }
 
-  function generateRecipes() {
+  async function handleRemoveSavedMealPlan(planId: string) {
+    try {
+      const response = await fetch(`/api/saved-meal-plans?id=${planId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Remove from state if API call succeeds
+        setSavedMealPlans((current) => current.filter((plan) => plan.id !== planId));
+      } else if (response.status === 401) {
+        // Not logged in, use localStorage
+        setSavedMealPlans(removeSavedMealPlan(planId));
+      } else {
+        console.error("Failed to delete meal plan from database");
+        // Still remove from local state as fallback
+        setSavedMealPlans(removeSavedMealPlan(planId));
+      }
+    } catch (error) {
+      console.error("Error deleting meal plan:", error);
+      // Fallback to localStorage
+      setSavedMealPlans(removeSavedMealPlan(planId));
+    }
+  }
+
+  function handleDeleteShoppingList(listId: string) {
+    setShoppingLists(deleteShoppingList(listId));
+  }
+
+  function handleUpdateShoppingLists() {
+    setShoppingLists(getShoppingLists());
+  }
+
+  function handleStartShopping(listId: string) {
+    const updatedLists = updateShoppingList(listId, { isActive: true });
+    setShoppingLists(updatedLists);
+  }
+
+  function handleCreateShoppingListFromPlan(plan: SavedMealPlan) {
+    const listName = `Compras - ${plan.name}`;
+    
+    // Check if a shopping list with this name already exists
+    const existingList = shoppingLists.find(list => list.name === listName);
+    
+    if (existingList) {
+      // List already exists, just switch to lists tab
+      console.log("[home-screen] Shopping list already exists, switching to lists tab");
+      setActiveTab("lists");
+      return;
+    }
+    
+    // Import the function dynamically to avoid circular dependency
+    const { createShoppingListFromMealPlan } = require("@/lib/app-storage");
+    
+    // Create shopping list from meal plan
+    const newList = createShoppingListFromMealPlan(
+      plan.shoppingList,
+      listName
+    );
+    
+    // Update local state
+    setShoppingLists(getShoppingLists());
+    
+    // Switch to lists tab
+    setActiveTab("lists");
+    
+    // Dispatch event to notify other components
+    window.dispatchEvent(new CustomEvent("shoppingListCreated"));
+  }
+
+  function handleConfirmRecipeGeneration() {
     const ingredients = mergeIngredients(selectedIngredients, inputValue);
 
     if (ingredients.length < 2) {
@@ -226,17 +393,32 @@ export function HomeScreen() {
     }
 
     setError(null);
+    
+    // Mostrar confirmação com parâmetros extraídos
+    setConfirmedParams({
+      ingredients,
+      servings,
+      dishType,
+      diet: diet || undefined,
+    });
+    setShowConfirmation(true);
+  }
+
+  function generateRecipes() {
+    if (!confirmedParams) return;
+
+    setShowConfirmation(false);
+    setError(null);
 
     startTransition(async () => {
       const response = await fetch("/api/generate-recipes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Request-Time": Date.now().toString(),
         },
-        body: JSON.stringify({
-          ingredients,
-          servings,
-        }),
+        cache: "no-store",
+        body: JSON.stringify(confirmedParams),
       });
 
       const payload = (await response.json()) as
@@ -245,200 +427,414 @@ export function HomeScreen() {
 
       if (!response.ok) {
         const errorPayload = payload as { error?: string; usage?: UsageState };
+        
+        // Redirect to login if user is not authenticated
+        if (response.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        
         setError(errorPayload.error ?? "Não foi possível gerar receita agora.");
         if (errorPayload.usage) {
           setUsage(errorPayload.usage);
+          setIsPremium(errorPayload.usage.isPremium);
         }
         return;
       }
 
       const successPayload = payload as GenerateRecipesPayload;
+      // Substituir completamente as receitas antigas pelas novas geradas
+      // Receitas antigas ficam apenas no histórico (recentRecipes do banco)
       setRecipes(successPayload.recipes);
       saveGeneratedRecipes(successPayload.recipes);
+      setUnusedIngredients(successPayload.unusedIngredients ?? []);
       setUsage(successPayload.usage);
-      setActiveTab("home");
+      setIsPremium(successPayload.usage.isPremium);
+      setActiveTab("receitas");
+      setConfirmedParams(null);
     });
   }
 
   return (
     <>
-      <FilterModal
-        open={showFilters}
-        value={filters}
-        onClose={() => setShowFilters(false)}
-        onToggle={toggleFilter}
-        onClear={clearFilters}
-      />
-
-      <main className="mx-auto flex w-full max-w-107.5 flex-1 flex-col px-4 pb-24 pt-6 sm:px-6">
-        {activeTab === "home" ? (
+      <main className="mx-auto flex w-full flex-1 flex-col px-4 pb-20 pt-2 sm:px-6 md:max-w-7xl md:pb-24 md:pt-4">
+        {activeTab === "receitas" ? (
           <>
-            <header className="flex items-start justify-between gap-4">
-              <div className="flex min-h-20 flex-1 items-center md:hidden">
-                <Image
-                  src="/header%201200x400%20transparente.png"
-                  alt="ChefBox"
-                  width={260}
-                  height={88}
-                  className="h-16 w-auto object-contain object-left"
-                  priority
-                />
-              </div>
-
-              <div className="hidden md:block">
-                <h1 className="max-w-[12ch] text-3xl font-bold leading-[1.05] text-[#2D3142]">
-                  Não sabe o que cozinhar?
-                </h1>
-                <p className="mt-3 max-w-[28ch] text-sm leading-6 text-slate-500">
-                  Gere uma receita prática com ingredientes, quantidade certa para cada pessoa e custo estimado.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowFilters(true)}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-[0_12px_24px_rgba(45,49,66,0.06)]"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
-                  <path d="M4 7h16" />
-                  <path d="M7 12h10" />
-                  <path d="M10 17h4" />
-                  <circle cx="18" cy="7" r="1.5" fill="currentColor" />
-                  <circle cx="6" cy="12" r="1.5" fill="currentColor" />
-                  <circle cx="14" cy="17" r="1.5" fill="currentColor" />
-                </svg>
-              </button>
+            {/* Mobile header with logo */}
+            <header className="mb-4 flex items-center justify-center md:hidden">
+              <Image
+                src="/mobile 900x270 (1).png"
+                alt="ChefBox"
+                width={270}
+                height={81}
+                className="h-20 object-contain"
+                style={{ width: 'auto' }}
+                priority
+              />
             </header>
 
-            <section className="mt-6">
-              <IngredientInput
-                inputValue={inputValue}
-                onInputChange={setInputValue}
-                ingredients={selectedIngredients}
-                servings={servings}
-                onServingsChange={setServings}
-                onAddIngredient={addIngredient}
-                onRemoveIngredient={removeIngredient}
-              />
 
-              <AppButton
-                fullWidth
-                className="mt-4"
-                onClick={generateRecipes}
-                disabled={isPending}
-                icon={
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current" strokeWidth="1.8">
-                    <path d="m5 12 4 4L19 6" />
-                  </svg>
-                }
-              >
-                {isPending ? "Gerando receita" : "Gerar receita"}
-              </AppButton>
 
-              {usage ? (
-                <p className="mt-3 text-center text-xs font-medium text-slate-400">
-                  {usage.isPremium
-                    ? "Plano premium ativo"
-                    : `${usage.remaining} gerações restantes hoje`}
-                </p>
-              ) : null}
+            {/* 2-column layout on desktop */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
+              {/* LEFT COLUMN - Input & CTA */}
+              <div className="space-y-5">
+                <IngredientInput
+                  inputValue={inputValue}
+                  onInputChange={setInputValue}
+                  ingredients={selectedIngredients}
+                  servings={servings}
+                  onServingsChange={setServings}
+                  dishType={dishType}
+                  onDishTypeChange={setDishType}
+                  diet={diet}
+                  onDietChange={setDiet}
+                  onAddIngredient={addIngredient}
+                  onRemoveIngredient={removeIngredient}
+                />
 
-              {error ? (
-                <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {error}
-                </div>
-              ) : null}
-            </section>
+                {/* Prominent CTA */}
+                <AppButton
+                  fullWidth
+                  className="h-14! text-base font-semibold md:h-16! md:text-lg"
+                  onClick={handleConfirmRecipeGeneration}
+                  disabled={isPending}
+                  icon={
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="2">
+                      <path d="m5 12 4 4L19 6" />
+                    </svg>
+                  }
+                >
+                  Gerar receita
+                </AppButton>
 
-            <section className="mt-5 rounded-[28px] bg-[#FF6B35] p-4 text-white shadow-[0_18px_38px_rgba(255,107,53,0.22)]">
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">
-                    Premium
-                  </p>
-                  <h2 className="mt-1 text-2xl font-bold text-white">
-                    Receitas ilimitadas
-                  </h2>
-                  <p className="mt-1 text-sm text-white/80">
-                    Destrave planejamento semanal, lista de compras e visão consolidada de custos.
-                  </p>
-                </div>
-                <div className="grid h-20 w-24 grid-cols-2 gap-2 rounded-3xl bg-white/12 p-3">
-                  <div className="rounded-2xl bg-white/18 p-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/70">Semana</p>
-                    <p className="mt-1 text-sm font-bold">7d</p>
+                {/* Loading Overlay com Chapéu de Chef */}
+                {isPending && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="animate-spin">
+                        <svg viewBox="0 0 64 64" className="h-24 w-24 text-white" fill="currentColor">
+                          {/* Chapéu de Chef - Toque */}
+                          <path d="M32 4c-3.5 0-6.5 2.2-7.6 5.3C23 9.1 21.5 9 20 9c-5.5 0-10 4.5-10 10 0 1.4.3 2.7.8 3.9.2.5.7.8 1.2.8h40c.5 0 1-.3 1.2-.8.5-1.2.8-2.5.8-3.9 0-5.5-4.5-10-10-10-1.5 0-2.9.3-4.2.7C38.5 6.2 35.5 4 32 4z" />
+                          <rect x="14" y="26" width="36" height="30" rx="1" />
+                          <rect x="16" y="28" width="32" height="26" rx="0.5" opacity="0.2" />
+                          <path d="M17 30h30M17 34h30M17 38h30" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
+                        </svg>
+                      </div>
+                      <p className="text-lg font-semibold text-white">Gerando suas receitas...</p>
+                    </div>
                   </div>
-                  <div className="rounded-2xl bg-white/18 p-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/70">Custo</p>
-                    <p className="mt-1 text-sm font-bold">R$</p>
+                )}
+
+                {/* Confirmation Modal */}
+                {showConfirmation && confirmedParams && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-[#2D3142]">Confirmar dados</h3>
+                        <button
+                          onClick={() => {
+                            setShowConfirmation(false);
+                            setConfirmedParams(null);
+                          }}
+                          className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="2">
+                            <path d="M18 6 6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Ingredientes</p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {confirmedParams.ingredients.map((ing, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center rounded-full bg-[#FF6B35]/10 px-3 py-1 text-sm font-medium text-[#FF6B35]"
+                              >
+                                {ing}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Porções</p>
+                            <p className="mt-1 text-lg font-bold text-[#2D3142]">{confirmedParams.servings} {confirmedParams.servings === 1 ? 'pessoa' : 'pessoas'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tipo de refeição</p>
+                            <p className="mt-1 text-lg font-bold text-[#2D3142] capitalize">
+                              {confirmedParams.dishType === 'breakfast' ? 'Café da manhã' :
+                               confirmedParams.dishType === 'lunch' ? 'Almoço' :
+                               confirmedParams.dishType === 'snack' ? 'Lanche' : 'Jantar'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {confirmedParams.diet && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Restrição</p>
+                            <p className="mt-1 text-lg font-bold text-[#2D3142] capitalize">{confirmedParams.diet}</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 pt-4">
+                          <button
+                            onClick={() => {
+                              setShowConfirmation(false);
+                              setConfirmedParams(null);
+                            }}
+                            className="flex-1 rounded-full border-2 border-slate-200 px-6 py-3 font-semibold text-slate-600 transition hover:bg-slate-50"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={generateRecipes}
+                            disabled={isPending}
+                            className="flex-1 rounded-full bg-[#FF6B35] px-6 py-3 font-semibold text-white transition hover:bg-[#FF8C42] disabled:opacity-60"
+                          >
+                            {isPending ? 'Gerando...' : 'Confirmar e gerar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Usage indicator */}
+                <UsageIndicator variant="compact" className="mb-2" />
+
+                {error ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {error}
+                  </div>
+                ) : null}
+
+                {/* Premium upsell - show on mobile or when no recipes */}
+                {recipes.length === 0 && hasLoadedAccess && !premiumActive && (
+                  <section className="rounded-3xl bg-linear-to-br from-[#FF6B35] to-[#FF8C42] p-5 text-white shadow-lg md:hidden">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-white/80">
+                      Premium
+                    </p>
+                    <h2 className="mt-2 text-2xl font-bold">
+                      Receitas ilimitadas
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-white/90">
+                      Destrave planejamento semanal, lista de compras e custos consolidados.
+                    </p>
+                    <Link href="/planos" className="mt-4 block w-full rounded-full bg-white px-6 py-3 text-center text-sm font-semibold text-[#FF6B35] transition hover:bg-white/95">
+                      Ver planos
+                    </Link>
+                  </section>
+                )}
               </div>
-            </section>
 
-            {recipes.length > 0 ? (
-              <section className="mt-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-[#2D3142]">Sugestões</h2>
-                  <Link href={`/dashboard?recipe=${recipes[0]?.id ?? ""}`} className="text-sm font-semibold text-[#4D7C4F]">
-                    Abrir ficha
-                  </Link>
+              {/* RIGHT COLUMN - Preview & Benefits */}
+              <div className="space-y-6">
+                {recipes.length > 0 ? (
+                  <section>
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-[#2D3142]">Suas receitas</h2>
+                      <Link href={`/dashboard?recipe=${recipes[0]?.id ?? ""}`} className="text-sm font-semibold text-[#FF6B35] hover:text-[#FF8C42]">
+                        Ver detalhes →
+                      </Link>
+                    </div>
+
+                    {unusedIngredients.length > 0 && (
+                      <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+                          Não utilizados nesta geração
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {unusedIngredients.map((ing) => (
+                            <span
+                              key={ing}
+                              className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-300"
+                            >
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {recipes.map((recipe) => (
+                        <RecipeCard
+                          key={recipe.id}
+                          recipe={recipe}
+                          isSaved={savedRecipes.some((savedRecipe) => savedRecipe.id === recipe.id)}
+                          onSaveRecipe={handleSaveRecipe}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ) : (
+                  <>
+                    {/* Benefits cards */}
+                    <div className="hidden space-y-2.5 md:block">
+                      <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(45,49,66,0.04)]">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4D7C4F]/8 text-[#4D7C4F]">
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="2">
+                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-[#2D3142]">Custo estimado</h3>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                              Saiba quanto vai gastar antes de ir ao mercado.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(45,49,66,0.04)]">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF6B35]/8 text-[#FF6B35]">
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 6v6l4 2" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-[#2D3142]">Tempo real</h3>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                              Receitas com tempo de preparo ajustado para sua rotina.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(45,49,66,0.04)]">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/8 text-blue-600">
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="2">
+                              <path d="M9 11 12 14 22 4" />
+                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-[#2D3142]">Porções exatas</h3>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                              Gramatura certa para cada ingrediente, sem desperdício.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop premium card */}
+                    {hasLoadedAccess && !premiumActive ? (
+                    <section className="hidden rounded-3xl bg-linear-to-br from-[#FF6B35] to-[#FF8C42] p-8 text-white shadow-xl md:block">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-white/80">
+                        Premium
+                      </p>
+                      <h2 className="mt-3 text-3xl font-bold">
+                        Receitas ilimitadas
+                      </h2>
+                      <p className="mt-3 leading-relaxed text-white/90">
+                        Destrave planejamento semanal, lista de compras automatizada e visão consolidada de custos.
+                      </p>
+                      <Link href="/planos" className="mt-6 block w-full rounded-full bg-white px-6 py-4 text-center font-semibold text-[#FF6B35] transition hover:bg-white/95">
+                        Ver planos
+                      </Link>
+                    </section>
+                    ) : null}
+                  </>
+                )}
+
+                {/* Recent history - desktop only, bottom */}
+                {recipes.length === 0 && recentRecipes.length > 0 && (
+                  <section className="hidden md:block">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="text-xl font-bold text-[#2D3142]">Recente</h2>
+                    </div>
+                    <div className="space-y-2">
+                      {recentRecipes.slice(0, 2).map((recipe) => (
+                        <HistoryCard
+                          key={recipe.id}
+                          title={recipe.title}
+                          time={recipe.prepTime}
+                          ingredientsCount={recipe.protein.ingredients.length + (recipe.base?.reduce((acc, b) => acc + b.ingredients.length, 0) ?? 0)}
+                          dateLabel={"Recente"}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile history - below fold */}
+            {recipes.length === 0 && recentRecipes.length > 0 && (
+              <section className="mt-8 md:hidden">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-[#2D3142]">Histórico</h2>
                 </div>
                 <div className="space-y-3">
-                  {recipes.map((recipe) => (
-                    <RecipeCard
+                  {recentRecipes.slice(0, 4).map((recipe) => (
+                    <HistoryCard
                       key={recipe.id}
-                      recipe={recipe}
-                      isSaved={savedRecipes.some((savedRecipe) => savedRecipe.id === recipe.id)}
-                      onSaveRecipe={handleSaveRecipe}
+                      title={recipe.title}
+                      time={recipe.prepTime}
+                      ingredientsCount={recipe.protein.ingredients.length + (recipe.base?.reduce((acc, b) => acc + b.ingredients.length, 0) ?? 0)}
+                      dateLabel={"Recente"}
                     />
                   ))}
                 </div>
               </section>
-            ) : null}
-
-            <section className="mt-6 flex-1">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#2D3142]">Histórico</h2>
-                <button type="button" className="text-sm font-semibold text-slate-500">
-                  Ver tudo
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {historyItems.map((item) => (
-                  <HistoryCard key={item.title} {...item} />
-                ))}
-              </div>
-            </section>
+            )}
           </>
+        ) : null}
+
+        {activeTab === "planner" ? (
+          <MealPlanPage />
         ) : null}
 
         {activeTab === "saved" ? (
           <SavedRecipesScreen
             recipes={savedRecipes}
             onRemoveRecipe={handleRemoveSavedRecipe}
+            mealPlans={savedMealPlans}
+            onRemoveMealPlan={handleRemoveSavedMealPlan}
+            onCreateShoppingList={handleCreateShoppingListFromPlan}
           />
         ) : null}
 
-        {activeTab === "lists" ? <ListsScreen recipes={savedRecipes} /> : null}
-
-        {activeTab === "account" ? (
-          <AccountScreen isPremium={usage?.isPremium ?? false} />
+        {activeTab === "lists" ? (
+          <ListsScreen
+            shoppingLists={shoppingLists}
+            onUpdateLists={handleUpdateShoppingLists}
+            onDeleteList={handleDeleteShoppingList}
+            onStartShopping={handleStartShopping}
+          />
         ) : null}
 
-        <nav className="fixed inset-x-0 bottom-4 mx-auto flex w-[calc(100%-2rem)] max-w-99.5 items-center justify-around rounded-[28px] border border-slate-200 bg-white/92 px-4 py-3 shadow-[0_18px_42px_rgba(45,49,66,0.10)] backdrop-blur md:bottom-6">
+        {activeTab === "macros" ? (
+          <MacroCalculatorScreen isPremium={premiumActive} />
+        ) : null}
+
+        {activeTab === "account" ? (
+          <AccountScreen isPremium={premiumActive} />
+        ) : null}
+
+        <nav className="fixed inset-x-0 bottom-0 left-0 right-0 flex w-full items-center justify-around border-t border-slate-200/80 bg-white px-2 py-2 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] md:px-4">
           {navItems.map((item) => (
             <button
               key={item.label}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl px-3 text-xs font-medium ${
-                activeTab === item.id ? "text-[#FF6B35]" : "text-slate-400"
+              className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition-all hover:bg-orange-50 md:px-3 ${
+                activeTab === item.id ? "bg-orange-50 text-[#FF6B35] font-semibold" : "text-slate-500"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="flex items-center justify-center">{item.icon}</span>
+              <span className="text-[10px] md:text-xs">{item.label}</span>
             </button>
           ))}
         </nav>

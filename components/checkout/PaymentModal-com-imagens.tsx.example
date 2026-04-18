@@ -1,0 +1,131 @@
+// Versão OPCIONAL do PaymentModal com logo do Mercado Pago
+// Se você baixar o logo, substitua a seção do footer por este código:
+
+/* 
+  ANTES DE USAR:
+  1. Baixe o logo do Mercado Pago em: https://www.mercadopago.com.br/developers/pt/docs/resources/brand-guide
+  2. Salve em: public/images/payment/mercadopago-logo.png (120x40px)
+  3. Ou use o símbolo: public/images/payment/mercadopago-icon.png (40x40px)
+*/
+
+import Image from "next/image";
+
+// Substitua o footer atual (linhas ~250-265) por este código:
+
+{/* Footer com logo do Mercado Pago */}
+<div className="mt-4 pt-4 border-t border-gray-100">
+  {/* Selo de segurança */}
+  <div className="flex items-center justify-center gap-2 mb-3">
+    <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+    <p className="text-xs text-gray-600 font-medium">
+      Pagamento 100% seguro
+    </p>
+  </div>
+  
+  {/* Logo Mercado Pago */}
+  <div className="flex items-center justify-center gap-2 mb-2">
+    <span className="text-xs text-gray-500">Processado por</span>
+    <Image 
+      src="/images/payment/mercadopago-logo.png"
+      alt="Mercado Pago"
+      width={80}
+      height={27}
+      className="opacity-80"
+    />
+  </div>
+  
+  {/* Textos de segurança */}
+  <p className="text-center text-xs text-gray-400">
+    Seus dados são criptografados • SSL certificado
+  </p>
+  <p className="text-center text-xs text-gray-500 mt-2">
+    Cancele quando quiser • Sem taxas de cancelamento
+  </p>
+</div>
+
+// =========================================
+// VERSÃO ALTERNATIVA: Com bandeiras de cartão (logos reais)
+// =========================================
+
+// Substitua a seção de bandeiras (linhas ~200-210) por:
+
+{/* Bandeiras de Cartão com Logos Reais */}
+<div className="mb-4 pb-4 border-b border-gray-100">
+  <p className="text-xs text-gray-500 mb-2">Aceitamos:</p>
+  <div className="flex items-center gap-2">
+    <Image 
+      src="/images/payment/visa.png" 
+      alt="Visa" 
+      width={50} 
+      height={32}
+      className="rounded border border-gray-200"
+    />
+    <Image 
+      src="/images/payment/mastercard.png" 
+      alt="Mastercard" 
+      width={50} 
+      height={32}
+      className="rounded border border-gray-200"
+    />
+    <Image 
+      src="/images/payment/elo.png" 
+      alt="Elo" 
+      width={50} 
+      height={32}
+      className="rounded border border-gray-200"
+    />
+    <Image 
+      src="/images/payment/amex.png" 
+      alt="American Express" 
+      width={50} 
+      height={32}
+      className="rounded border border-gray-200"
+    />
+  </div>
+</div>
+
+// =========================================
+// VERSÃO ALTERNATIVA: Com selo PCI Compliance
+// =========================================
+
+{/* Footer com múltiplos selos */}
+<div className="mt-4 pt-4 border-t border-gray-100">
+  {/* Linha de selos */}
+  <div className="flex items-center justify-center gap-4 mb-3">
+    {/* SSL */}
+    <div className="flex flex-col items-center">
+      <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center mb-1">
+        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <span className="text-[10px] text-gray-500 font-medium">SSL</span>
+    </div>
+    
+    {/* PCI Compliance - Se tiver o logo */}
+    <Image 
+      src="/images/payment/pci-compliant.png"
+      alt="PCI Compliant"
+      width={60}
+      height={60}
+      className="opacity-70"
+    />
+    
+    {/* Mercado Pago */}
+    <div className="flex flex-col items-center">
+      <Image 
+        src="/images/payment/mercadopago-icon.png"
+        alt="Mercado Pago"
+        width={40}
+        height={40}
+      />
+      <span className="text-[10px] text-gray-500 font-medium mt-1">Mercado Pago</span>
+    </div>
+  </div>
+  
+  <p className="text-center text-xs text-gray-400">
+    Pagamento seguro e criptografado
+  </p>
+</div>

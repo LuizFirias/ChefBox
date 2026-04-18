@@ -1,4 +1,4 @@
-import type { Recipe } from "@/lib/types";
+import type { MealPlanResponse, MealPlanSettings, Recipe, RecipePart, ShoppingList, ShoppingListItem, MealPlanShoppingCategory } from "@/lib/types";
 
 export type AccountProfile = {
   email: string;
@@ -10,7 +10,11 @@ export type AccountProfile = {
 
 const GENERATED_RECIPES_KEY = "chefbox-generated-recipes";
 const SAVED_RECIPES_KEY = "chefbox-saved-recipes";
+const SAVED_MEAL_PLANS_KEY = "chefbox-saved-meal-plans";
+const SHOPPING_LISTS_KEY = "chefbox-shopping-lists";
 const ACCOUNT_PROFILE_KEY = "chefbox-account-profile";
+const MEAL_PLAN_KEY = "chefbox-meal-plan";
+const MEAL_PLAN_SETTINGS_KEY = "chefbox-meal-plan-settings";
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -42,8 +46,85 @@ function writeJson<T>(key: string, value: T) {
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
+function normalizePart(raw: unknown, fallbackTitle: string): RecipePart {
+  const record = (raw ?? {}) as Record<string, unknown>;
+
+  return {
+    title: typeof record.title === "string" && record.title.trim().length > 0
+      ? record.title
+      : fallbackTitle,
+    ingredients: Array.isArray(record.ingredients)
+      ? (record.ingredients as RecipePart["ingredients"])
+      : [],
+    steps: Array.isArray(record.steps) ? (record.steps as string[]) : [],
+  };
+}
+
+// Backward-compat: recipes saved in old formats are upgraded on read
+function normalizeRecipe(raw: unknown): Recipe {
+  const record = (raw ?? {}) as Record<string, unknown>;
+  const title = typeof record.title === "string" && record.title.trim().length > 0
+    ? record.title
+    : "Receita";
+
+  if (record.protein) {
+    return {
+      ...(record as unknown as Recipe),
+      title,
+      description: typeof record.description === "string" ? record.description : "",
+      prepTime: typeof record.prepTime === "string" ? record.prepTime : "20 min",
+      servings: typeof record.servings === "number" ? record.servings : 2,
+      tags: Array.isArray(record.tags) ? (record.tags as string[]) : [],
+      protein: normalizePart(record.protein, title),
+      base: Array.isArray(record.base)
+        ? (record.base as unknown[]).map((part, index) => normalizePart(part, `Base ${index + 1}`))
+        : [],
+      assembly: Array.isArray(record.assembly) ? (record.assembly as string[]) : [],
+    };
+  }
+
+  if (record.main) {
+    return {
+      ...(record as unknown as Recipe),
+      title,
+      description: typeof record.description === "string" ? record.description : "",
+      prepTime: typeof record.prepTime === "string" ? record.prepTime : "20 min",
+      servings: typeof record.servings === "number" ? record.servings : 2,
+      tags: Array.isArray(record.tags) ? (record.tags as string[]) : [],
+      protein: normalizePart(record.main, title),
+      base: record.side ? [normalizePart(record.side, "Base")] : [],
+      assembly: [],
+    };
+  }
+
+  return {
+    ...(record as unknown as Recipe),
+    title,
+    description: typeof record.description === "string" ? record.description : "",
+    prepTime: typeof record.prepTime === "string" ? record.prepTime : "20 min",
+    servings: typeof record.servings === "number" ? record.servings : 2,
+    tags: Array.isArray(record.tags) ? (record.tags as string[]) : [],
+    protein: normalizePart(
+      {
+        title,
+        ingredients: record.ingredients,
+        steps: record.steps,
+      },
+      title,
+    ),
+    base: [],
+    assembly: [],
+  };
+}
+
+function normalizeRecipes(raws: unknown[]): Recipe[] {
+  return raws.map(normalizeRecipe);
+}
+
 export function getGeneratedRecipes() {
-  return readJson<Recipe[]>(GENERATED_RECIPES_KEY, []);
+  const recipes = normalizeRecipes(readJson<unknown[]>(GENERATED_RECIPES_KEY, []));
+  writeJson(GENERATED_RECIPES_KEY, recipes);
+  return recipes;
 }
 
 export function saveGeneratedRecipes(recipes: Recipe[]) {
@@ -51,7 +132,9 @@ export function saveGeneratedRecipes(recipes: Recipe[]) {
 }
 
 export function getSavedRecipes() {
-  return readJson<Recipe[]>(SAVED_RECIPES_KEY, []);
+  const recipes = normalizeRecipes(readJson<unknown[]>(SAVED_RECIPES_KEY, []));
+  writeJson(SAVED_RECIPES_KEY, recipes);
+  return recipes;
 }
 
 export function isRecipeSaved(recipeId: string) {
@@ -99,4 +182,191 @@ export function getAccountProfile(defaults?: Partial<AccountProfile>) {
 
 export function saveAccountProfile(profile: AccountProfile) {
   writeJson(ACCOUNT_PROFILE_KEY, profile);
+}
+
+export function getMealPlan<T extends MealPlanResponse & { source?: "ai" | "fallback" }>() {
+  const plan = readJson<T | null>(MEAL_PLAN_KEY, null);
+  
+  // Validar estrutura e limpar dados antigos/inválidos
+  if (plan && plan.plan && Array.isArray(plan.plan)) {
+    const hasInvalidMeals = plan.plan.some((day) =>
+      day.meals?.some((meal: any) => {
+        const validTypes = ["breakfast", "lunch", "snack", "dinner"];
+        return !validTypes.includes(meal.type);
+      })
+    );
+    
+    if (hasInvalidMeals) {
+      // Dados antigos detectados, limpar
+      console.warn("[app-storage] Invalid meal types detected, clearing meal plan");
+      writeJson(MEAL_PLAN_KEY, null);
+      return null;
+    }
+  }
+  
+  return plan;
+}
+
+export function saveMealPlan<T extends MealPlanResponse & { source?: "ai" | "fallback" }>(plan: T) {
+  writeJson(MEAL_PLAN_KEY, plan);
+}
+
+export function getMealPlanSettings(defaults: MealPlanSettings) {
+  return {
+    ...defaults,
+    ...readJson<Partial<MealPlanSettings>>(MEAL_PLAN_SETTINGS_KEY, {}),
+  };
+}
+
+export function saveMealPlanSettings(settings: MealPlanSettings) {
+  writeJson(MEAL_PLAN_SETTINGS_KEY, settings);
+}
+
+// ─── Saved Meal Plans ───────────────────────────────────────────────────────
+
+export type SavedMealPlan = MealPlanResponse & {
+  id: string;
+  name: string;
+  savedAt: number;
+  settings: MealPlanSettings;
+};
+
+/**
+ * Get saved meal plans from localStorage (fallback for logged out users)
+ * For logged in users, use getSavedMealPlansFromDB instead
+ */
+export function getSavedMealPlans(): SavedMealPlan[] {
+  return readJson<SavedMealPlan[]>(SAVED_MEAL_PLANS_KEY, []);
+}
+
+/**
+ * Save meal plan to localStorage (fallback for logged out users)
+ * For logged in users, use saveMealPlanToDB instead
+ */
+export function saveMealPlanToSaved(plan: MealPlanResponse, settings: MealPlanSettings, name?: string): SavedMealPlan[] {
+  const currentPlans = getSavedMealPlans();
+  
+  // Generate default name if not provided
+  const defaultName = name || `Planejamento ${new Date().toLocaleDateString("pt-BR")}`;
+  
+  const newPlan: SavedMealPlan = {
+    ...plan,
+    id: `meal-plan-${Date.now()}`,
+    name: defaultName,
+    savedAt: Date.now(),
+    settings,
+  };
+  
+  const nextPlans = [newPlan, ...currentPlans];
+  writeJson(SAVED_MEAL_PLANS_KEY, nextPlans);
+  return nextPlans;
+}
+
+/**
+ * Remove saved meal plan from localStorage (fallback for logged out users)
+ * For logged in users, use deleteSavedMealPlanFromDB instead
+ */
+export function removeSavedMealPlan(planId: string): SavedMealPlan[] {
+  const nextPlans = getSavedMealPlans().filter((plan) => plan.id !== planId);
+  writeJson(SAVED_MEAL_PLANS_KEY, nextPlans);
+  return nextPlans;
+}
+
+// ─── Shopping Lists ───────────────────────────────────────────────────────
+
+/**
+ * Get all shopping lists from localStorage
+ */
+export function getShoppingLists(): ShoppingList[] {
+  return readJson<ShoppingList[]>(SHOPPING_LISTS_KEY, []);
+}
+
+/**
+ * Create a new shopping list from meal plan shopping list
+ * If a list with the same name already exists, returns the existing list without creating a duplicate
+ */
+export function createShoppingListFromMealPlan(
+  shoppingCategories: MealPlanShoppingCategory[],
+  name?: string
+): ShoppingList {
+  const listName = name || "Nova compra";
+  const currentLists = getShoppingLists();
+  
+  // Check if a list with this name already exists
+  const existingList = currentLists.find(list => list.name === listName);
+  if (existingList) {
+    console.log(`[app-storage] Shopping list "${listName}" already exists, returning existing list`);
+    return existingList;
+  }
+  
+  const items: ShoppingListItem[] = shoppingCategories.flatMap((category) =>
+    category.items.map((item) => ({
+      id: `item-${Date.now()}-${Math.random()}`,
+      name: item.name,
+      quantity: item.quantity,
+      category: category.category,
+      checked: false,
+    }))
+  );
+
+  const newList: ShoppingList = {
+    id: `list-${Date.now()}`,
+    name: listName,
+    createdAt: Date.now(),
+    items,
+    isActive: false,
+  };
+
+  const nextLists = [newList, ...currentLists];
+  writeJson(SHOPPING_LISTS_KEY, nextLists);
+  console.log(`[app-storage] Created new shopping list "${listName}"`);
+  
+  return newList;
+}
+
+/**
+ * Update shopping list
+ */
+export function updateShoppingList(listId: string, updates: Partial<ShoppingList>): ShoppingList[] {
+  const lists = getShoppingLists();
+  const nextLists = lists.map((list) =>
+    list.id === listId ? { ...list, ...updates } : list
+  );
+  writeJson(SHOPPING_LISTS_KEY, nextLists);
+  return nextLists;
+}
+
+/**
+ * Toggle item checked state
+ */
+export function toggleShoppingListItem(listId: string, itemId: string): ShoppingList[] {
+  const lists = getShoppingLists();
+  const nextLists = lists.map((list) => {
+    if (list.id !== listId) return list;
+    
+    return {
+      ...list,
+      items: list.items.map((item) =>
+        item.id === itemId ? { ...item, checked: !item.checked } : item
+      ),
+    };
+  });
+  writeJson(SHOPPING_LISTS_KEY, nextLists);
+  return nextLists;
+}
+
+/**
+ * Delete shopping list
+ */
+export function deleteShoppingList(listId: string): ShoppingList[] {
+  const nextLists = getShoppingLists().filter((list) => list.id !== listId);
+  writeJson(SHOPPING_LISTS_KEY, nextLists);
+  return nextLists;
+}
+
+/**
+ * Rename shopping list
+ */
+export function renameShoppingList(listId: string, newName: string): ShoppingList[] {
+  return updateShoppingList(listId, { name: newName });
 }
