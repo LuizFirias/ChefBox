@@ -107,7 +107,7 @@ export default function PlanosPage() {
   const [activeGroup, setActiveGroup] = useState<PlanGroup>("pro");
   const [paymentModal, setPaymentModal] = useState<{
     isOpen: boolean;
-    plan: 'basic' | 'pro';
+    plan: 'basic' | 'pro' | 'test';
     period: 'monthly' | 'quarterly' | 'annual';
     price: number;
   }>({
