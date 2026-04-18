@@ -209,7 +209,7 @@ export default function PlanosPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setPaymentModalState({
+                  setPaymentModal({
                     isOpen: true,
                     plan: 'test',
                     period: 'monthly',

@@ -29,6 +29,7 @@ const PLAN_PRICES = {
   pro_monthly:      24.90,
   pro_quarterly:    59.90,
   pro_annual:      199.90,
+  test_monthly:      1.00,
 }
 
 interface CreateSubscriptionParams {
@@ -38,7 +39,7 @@ interface CreateSubscriptionParams {
   email: string
   identificationNumber: string
   identificationType: string
-  plan: 'basic' | 'pro'
+  plan: 'basic' | 'pro' | 'test'
   period: 'monthly' | 'quarterly' | 'annual'
   userId: string
 }
