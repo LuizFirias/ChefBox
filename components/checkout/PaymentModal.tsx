@@ -43,6 +43,7 @@ export default function PaymentModal({
   const [success, setSuccess] = useState(false)
   const [mp, setMp] = useState<any>(null)
   const [cardForm, setCardForm] = useState<any>(null)
+  const [detectedBrand, setDetectedBrand] = useState<string | null>(null)
 
   const planKey = `${plan}_${period}` as keyof typeof PLAN_MAP
 
@@ -108,6 +109,20 @@ export default function PaymentModal({
         onFormMounted: (error: any) => {
           if (error) console.error('Erro ao montar form:', error)
         },
+        onCardTokenReceived: (error: any, token: any) => {
+          if (error) console.error('Erro no token:', error)
+        },
+        onBinChange: (bin: string) => {
+          // Detectar bandeira do cartão baseado nos primeiros dígitos
+          if (bin.length >= 6) {
+            const firstDigit = bin[0]
+            if (bin.startsWith('4')) setDetectedBrand('visa')
+            else if (bin.startsWith('5')) setDetectedBrand('mastercard')
+            else if (bin.startsWith('3')) setDetectedBrand('amex')
+            else if (bin.startsWith('6')) setDetectedBrand('elo')
+            else setDetectedBrand(null)
+          }
+        },
         onSubmit: async (event: any) => {
           event.preventDefault()
           setLoading(true)
@@ -123,6 +138,9 @@ export default function PaymentModal({
             identificationType,
           } = form.getCardFormData()
 
+          // Garantir que identificationType seja 'CPF' se não vier preenchido
+          const finalIdentificationType = identificationType || 'CPF'
+
           try {
             const result = await createSubscription({
               token,
@@ -130,7 +148,7 @@ export default function PaymentModal({
               issuerId,
               email,
               identificationNumber,
-              identificationType,
+              identificationType: finalIdentificationType,
               plan,
               period,
               userId,
@@ -201,35 +219,45 @@ export default function PaymentModal({
           <>
             {/* Bandeiras de Cartão Aceitas */}
             <div className="mb-4 pb-4 border-b border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">Aceitamos:</p>
+              <p className="text-xs text-gray-500 mb-2">
+                {detectedBrand ? 'Bandeira detectada:' : 'Aceitamos:'}
+              </p>
               <div className="flex items-center gap-2">
                 <Image 
                   src={visaIcon} 
                   alt="Visa" 
                   width={38} 
                   height={25}
-                  className="object-contain"
+                  className={`object-contain transition-opacity ${
+                    detectedBrand && detectedBrand !== 'visa' ? 'opacity-30' : 'opacity-100'
+                  }`}
                 />
                 <Image 
                   src={mastercardIcon} 
                   alt="Mastercard" 
                   width={38} 
                   height={25}
-                  className="object-contain"
+                  className={`object-contain transition-opacity ${
+                    detectedBrand && detectedBrand !== 'mastercard' ? 'opacity-30' : 'opacity-100'
+                  }`}
                 />
                 <Image 
                   src={eloIcon} 
                   alt="Elo" 
                   width={38} 
                   height={25}
-                  className="object-contain"
+                  className={`object-contain transition-opacity ${
+                    detectedBrand && detectedBrand !== 'elo' ? 'opacity-30' : 'opacity-100'
+                  }`}
                 />
                 <Image 
                   src={amexIcon} 
                   alt="American Express" 
                   width={38} 
                   height={25}
-                  className="object-contain"
+                  className={`object-contain transition-opacity ${
+                    detectedBrand && detectedBrand !== 'amex' ? 'opacity-30' : 'opacity-100'
+                  }`}
                 />
               </div>
             </div>

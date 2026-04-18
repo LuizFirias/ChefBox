@@ -103,7 +103,7 @@ const PRO_PLANS = [
 
 export default function PlanosPage() {
   const [user, setUser] = useState<any>(null);
-  const [activePeriod, setActivePeriod] = useState<PlanPeriod>("mensal");
+  const [activePeriod, setActivePeriod] = useState<PlanPeriod>("anual");
   const [activeGroup, setActiveGroup] = useState<PlanGroup>("pro");
   const [paymentModal, setPaymentModal] = useState<{
     isOpen: boolean;
@@ -205,7 +205,7 @@ export default function PlanosPage() {
 
           {/* Seletor de período */}
           <div className="mt-8 inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
-            {(["mensal", "trimestral", "anual"] as PlanPeriod[]).map((period) => (
+            {(["anual", "trimestral", "mensal"] as PlanPeriod[]).map((period) => (
               <button
                 key={period}
                 type="button"
