@@ -29,6 +29,11 @@ export async function POST(req: NextRequest) {
 
         const userId = sub.external_reference // ID do usuário que passamos na criação
 
+        if (!userId) {
+          console.error('[mp-webhook] external_reference ausente')
+          break
+        }
+
         if (sub.status === 'authorized') {
           // Assinatura ativa — garantir que o usuário tem acesso
           await admin.from('subscriptions')
@@ -46,7 +51,7 @@ export async function POST(req: NextRequest) {
             .eq('mp_subscription_id', data.id)
 
           // Recalcular plano ativo
-          await recalculateUserPlan(userId!, admin)
+          await recalculateUserPlan(userId, admin)
         }
         break
       }
