@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { APP_NAME } from "@/lib/config";
 import PaymentModal from "@/components/checkout/PaymentModal";
+import LifetimeCheckout from "@/components/checkout/LifetimeCheckout";
 
 const CHECKOUT_URLS: Record<string, string> = {
   "lifetime": "https://seguro.chefbox.com.br/r/C3M8X3UL9Q", // Mantém Yampi apenas para Vitalício
@@ -116,6 +117,7 @@ export default function PlanosPage() {
     period: 'monthly',
     price: 24.90,
   });
+  const [lifetimeCheckout, setLifetimeCheckout] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -134,10 +136,13 @@ export default function PlanosPage() {
   };
 
   function handleCheckout(checkoutKey: string) {
-    // Se for Vitalício, redireciona para Yampi (pagamento único)
+    // Se for Vitalício, abre checkout transparente MP
     if (checkoutKey === "lifetime") {
-      const url = CHECKOUT_URLS[checkoutKey];
-      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      if (!user) {
+        window.location.href = "/login?redirect=/planos";
+        return;
+      }
+      setLifetimeCheckout(true);
       return;
     }
 
@@ -355,6 +360,128 @@ export default function PlanosPage() {
         </div>
       </section>
 
+      {/* Tabela Comparativa de Funcionalidades */}
+      <section className="px-4 pb-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-8 text-center text-3xl font-bold text-slate-900">
+            Compare os Planos
+          </h2>
+          
+          {/* Desktop Table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg md:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Funcionalidade</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-amber-700">Vitalício</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Básico</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-[#FF6B35]">Pro</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <tr className="hover:bg-slate-50">
+                  <td className="px-6 py-4 text-sm text-slate-700">Acervo de receitas fixas</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+                <tr className="hover:bg-slate-50">
+                  <td className="px-6 py-4 text-sm text-slate-700">Calculadora de macros básica</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+                <tr className="hover:bg-slate-50">
+                  <td className="px-6 py-4 text-sm text-slate-700">Salvos de receitas</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+                <tr className="bg-amber-50/50 hover:bg-amber-50">
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">Geração de receitas por IA</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-xs font-semibold text-green-700">✅ até 60/mês</td>
+                  <td className="px-6 py-4 text-center text-xs font-semibold text-[#FF6B35]">✅ ILIMITADO</td>
+                </tr>
+                <tr className="bg-orange-50/50 hover:bg-orange-50">
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">Planejador semanal</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+                <tr className="bg-orange-50/50 hover:bg-orange-50">
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">Lista de mercado inteligente</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+                <tr className="bg-orange-50/50 hover:bg-orange-50">
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">Macros detalhadas com histórico</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+                <tr className="bg-orange-50/50 hover:bg-orange-50">
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">Histórico de receitas geradas</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">❌</td>
+                  <td className="px-6 py-4 text-center text-2xl">✅</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="space-y-4 md:hidden">
+            {[
+              { name: 'Acervo de receitas fixas', lifetime: true, basic: true, pro: true },
+              { name: 'Calculadora de macros básica', lifetime: true, basic: true, pro: true },
+              { name: 'Salvos de receitas', lifetime: true, basic: true, pro: true },
+              { name: 'Geração de receitas por IA', lifetime: false, basic: '60/mês', pro: 'ILIMITADO', highlight: true },
+              { name: 'Planejador semanal', lifetime: false, basic: false, pro: true, highlight: true },
+              { name: 'Lista de mercado inteligente', lifetime: false, basic: false, pro: true, highlight: true },
+              { name: 'Macros detalhadas', lifetime: false, basic: false, pro: true, highlight: true },
+              { name: 'Histórico de receitas', lifetime: false, basic: false, pro: true, highlight: true },
+            ].map((feature) => (
+              <div
+                key={feature.name}
+                className={`rounded-xl border p-4 ${
+                  feature.highlight ? 'border-orange-200 bg-orange-50/50' : 'border-slate-200 bg-white'
+                }`}
+              >
+                <p className={`mb-3 text-sm font-semibold ${feature.highlight ? 'text-slate-900' : 'text-slate-700'}`}>
+                  {feature.name}
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center">
+                    <p className="mb-1 text-xs font-medium text-amber-600">Vitalício</p>
+                    <p className="text-lg">
+                      {feature.lifetime === true ? '✅' : feature.lifetime === false ? '❌' : feature.lifetime}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="mb-1 text-xs font-medium text-slate-600">Básico</p>
+                    <p className={`text-lg ${typeof feature.basic === 'string' ? 'text-xs font-semibold text-green-700' : ''}`}>
+                      {feature.basic === true ? '✅' : feature.basic === false ? '❌' : feature.basic}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="mb-1 text-xs font-medium text-[#FF6B35]">Pro</p>
+                    <p className={`text-lg ${typeof feature.pro === 'string' ? 'text-xs font-semibold text-[#FF6B35]' : ''}`}>
+                      {feature.pro === true ? '✅' : feature.pro === false ? '❌' : feature.pro}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            ⭐ Destaque: Recursos exclusivos do plano Pro
+          </p>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="border-t border-slate-200 bg-white px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
@@ -424,14 +551,22 @@ export default function PlanosPage() {
 
       {/* Modal de Pagamento do Mercado Pago */}
       {user && (
-        <PaymentModal
-          isOpen={paymentModal.isOpen}
-          onClose={() => setPaymentModal((prev) => ({ ...prev, isOpen: false }))}
-          plan={paymentModal.plan}
-          period={paymentModal.period}
-          price={paymentModal.price}
-          userId={user.id}
-        />
+        <>
+          <PaymentModal
+            isOpen={paymentModal.isOpen}
+            onClose={() => setPaymentModal((prev) => ({ ...prev, isOpen: false }))}
+            plan={paymentModal.plan}
+            period={paymentModal.period}
+            price={paymentModal.price}
+            userId={user.id}
+          />
+          
+          <LifetimeCheckout
+            isOpen={lifetimeCheckout}
+            onClose={() => setLifetimeCheckout(false)}
+            userId={user.id}
+          />
+        </>
       )}
     </main>
   );
