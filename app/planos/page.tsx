@@ -203,26 +203,6 @@ export default function PlanosPage() {
             planejamento de refeições e análise nutricional completa.
           </p>
 
-          {/* Botão de Teste - APENAS PARA DESENVOLVIMENTO */}
-          {user && (
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setPaymentModal({
-                    isOpen: true,
-                    plan: 'test',
-                    period: 'monthly',
-                    price: 1.00
-                  })
-                }}
-                className="rounded-xl bg-purple-600 px-6 py-3 text-sm font-bold text-white hover:bg-purple-700 shadow-lg"
-              >
-                🧪 TESTE - Assinatura R$ 1,00/mês (Deletar depois)
-              </button>
-            </div>
-          )}
-
           {/* Seletor de período */}
           <div className="mt-8 inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
             {(["anual", "trimestral", "mensal"] as PlanPeriod[]).map((period) => (
@@ -253,51 +233,51 @@ export default function PlanosPage() {
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
 
           {/* Plano Lifetime — extrema esquerda */}
-          <article className="relative rounded-[28px] border-2 border-slate-200 bg-linear-to-br from-slate-900 to-slate-800 p-8 shadow-lg transition hover:shadow-xl">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-linear-to-r from-amber-400 to-amber-500 px-4 py-1 text-xs font-bold text-slate-900">
-              ⚡ Pagamento Único
+          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-lg transition hover:shadow-xl">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-slate-900">
+              💎 Pagamento Único
             </div>
             <div className="text-center">
-              <p className="text-sm font-semibold uppercase tracking-wider text-amber-400">Vitalício</p>
-              <h3 className="mt-1 text-2xl font-bold text-white">
+              <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Vitalício</p>
+              <h3 className="mt-2 text-3xl font-bold text-slate-900">
                 R$ 37
-                <span className="text-base font-normal text-slate-400"> pagamento único</span>
               </h3>
-              <p className="mt-1 text-xs font-medium text-amber-300">Acesso para sempre, sem renovações</p>
+              <p className="text-sm font-normal text-slate-500">pagamento único</p>
+              <p className="mt-1 text-xs font-medium text-amber-600">Sem renovações ou cobranças futuras</p>
               <button
                 type="button"
                 onClick={() => handleCheckout("lifetime")}
-                className="mt-6 w-full rounded-2xl bg-linear-to-r from-amber-400 to-amber-500 px-6 py-3 text-base font-bold text-slate-900 transition hover:from-amber-300 hover:to-amber-400"
+                className="mt-6 w-full rounded-2xl border-2 border-amber-500 bg-amber-50 px-6 py-3 text-base font-semibold text-amber-700 transition hover:bg-amber-500 hover:text-white"
               >
-                Comprar Agora
+                Comprar Vitalício
               </button>
             </div>
-            <ul className="mt-7 space-y-3">
+            <ul className="mt-6 space-y-2.5">
               {[
-                "Acesso vitalício ao plano Básico",
-                "60 receitas por mês",
-                "Calculadora de macros ilimitada",
-                "Histórico e favoritos salvos",
-                "Sem cobranças futuras",
+                "Acervo completo de receitas fixas",
+                "Calculadora de macros básica",
+                "Salvos de receitas",
+                "Sem limite de tempo",
               ].map((f) => (
-                <li key={f} className="flex items-start gap-3 text-sm text-slate-300">
-                  <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="m5 13 4 4L19 7" />
                   </svg>
                   {f}
                 </li>
               ))}
             </ul>
+            <p className="mt-4 text-center text-xs text-slate-400">🚫 Geração de receitas por IA não inclusa</p>
           </article>
 
           {/* Plano Básico */}
-          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-8 shadow-lg transition hover:shadow-xl">
+          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-lg transition hover:shadow-xl">
             <div className="text-center">
               <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Básico</p>
-              <h3 className="mt-1 text-2xl font-bold text-slate-900">
+              <h3 className="mt-2 text-3xl font-bold text-slate-900">
                 {basicoPlan.priceLabel}
-                <span className="text-base font-normal text-slate-500">{basicoPlan.periodLabel}</span>
               </h3>
+              <p className="text-sm font-normal text-slate-500">{basicoPlan.periodLabel}</p>
               {basicoPlan.savings && (
                 <p className="mt-1 text-xs font-medium text-green-600">{basicoPlan.savings}</p>
               )}
@@ -308,16 +288,19 @@ export default function PlanosPage() {
               >
                 Assinar Básico
               </button>
+              <p className="mt-3 text-xs text-slate-400">
+                🔄 Renova automaticamente
+              </p>
             </div>
-            <ul className="mt-7 space-y-3">
+            <ul className="mt-6 space-y-2.5">
               {[
-                "60 receitas por mês",
-                "Calculadora de macros ilimitada",
-                "Histórico e favoritos salvos",
-                "Suporte por email",
+                "Acervo completo de receitas fixas",
+                "Geração por IA: até 60/mês",
+                "Calculadora de macros básica",
+                "Salvos de receitas",
               ].map((f) => (
-                <li key={f} className="flex items-start gap-3 text-sm text-slate-600">
-                  <svg className="mt-0.5 h-5 w-5 shrink-0 text-[#4D7C4F]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#4D7C4F]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="m5 13 4 4L19 7" />
                   </svg>
                   {f}
@@ -327,16 +310,16 @@ export default function PlanosPage() {
           </article>
 
           {/* Plano Pro — destaque com melhor custo-benefício */}
-          <article className="relative rounded-[28px] border-2 border-[#FF6B35] bg-white p-8 shadow-xl ring-4 ring-[#FF6B35]/10 transition hover:shadow-2xl">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#FF6B35] px-4 py-1 text-xs font-bold text-white">
+          <article className="relative rounded-[28px] border-2 border-[#FF6B35] bg-white p-6 sm:p-8 shadow-xl ring-4 ring-[#FF6B35]/10 transition hover:shadow-2xl">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FF6B35] px-3 py-1 text-xs font-bold text-white">
               ⭐ Melhor Custo-Benefício
             </div>
             <div className="text-center">
               <p className="text-sm font-semibold uppercase tracking-wider text-[#FF6B35]">Pro</p>
-              <h3 className="mt-1 text-2xl font-bold text-slate-900">
+              <h3 className="mt-2 text-3xl font-bold text-slate-900">
                 {proPlan.priceLabel}
-                <span className="text-base font-normal text-slate-500">{proPlan.periodLabel}</span>
               </h3>
+              <p className="text-sm font-normal text-slate-500">{proPlan.periodLabel}</p>
               {proPlan.savings && (
                 <p className="mt-1 text-xs font-medium text-green-600">{proPlan.savings}</p>
               )}
@@ -347,19 +330,21 @@ export default function PlanosPage() {
               >
                 Assinar Pro
               </button>
+              <p className="mt-3 text-xs text-slate-400">
+                🔄 Renova automaticamente
+              </p>
             </div>
-            <ul className="mt-7 space-y-3">
+            <ul className="mt-6 space-y-2.5">
               {[
-                "Receitas ilimitadas",
+                "Geração por IA: ILIMITADA",
                 "Planejador semanal de refeições",
-                "Lista de compras automática",
-                "Rotina de meal prep",
-                "Análise de macros detalhada",
-                "Estimativa de custos",
-                "Suporte prioritário",
+                "Lista de mercado inteligente",
+                "Calculadora de macros detalhada",
+                "Histórico completo de receitas",
+                "Salvos ilimitados",
               ].map((f) => (
-                <li key={f} className="flex items-start gap-3 text-sm text-slate-600">
-                  <svg className="mt-0.5 h-5 w-5 shrink-0 text-[#FF6B35]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#FF6B35]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="m5 13 4 4L19 7" />
                   </svg>
                   {f}
