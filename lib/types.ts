@@ -216,6 +216,7 @@ export const YAMPI_PRODUCT_MAP: Record<string, { planType: PlanType; planPeriod:
 
 export const PLAN_LEVELS: Record<PlanType, number> = {
   lifetime: 1,
+  test: 2,      // Mesmo nível do Basic (para testes)
   basic: 2,
   pro: 3,
 };
