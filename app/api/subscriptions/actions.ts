@@ -129,30 +129,52 @@ export async function createSubscription(params: CreateSubscriptionParams) {
     const admin = createSupabaseAdminClient()
 
     if (!admin) {
+      console.error('[subscription] Erro: Admin client não inicializado')
       return { error: 'Erro ao conectar com banco de dados' }
     }
 
-    await admin.from('subscriptions').insert({
+    console.log('[subscription] Salvando no Supabase...')
+    console.log('[subscription] User ID:', userId)
+    console.log('[subscription] MP Subscription ID:', subscription.id)
+
+    const { data: subData, error: subError } = await admin.from('subscriptions').insert({
       user_id: userId,
+      provider: 'mercadopago',
+      plan: plan,
+      status: 'active',
       mp_subscription_id: subscription.id,
       plan_type: plan,
       plan_period: period,
-      status: 'active',
       price: amount,
       start_date: startDate.toISOString(),
       end_date: endDate.toISOString(),
-    })
+      current_period_end: endDate.toISOString(),
+    }).select()
+
+    if (subError) {
+      console.error('[subscription] Erro ao inserir subscription:', subError)
+      return { error: `Erro ao salvar assinatura: ${subError.message}` }
+    }
+
+    console.log('[subscription] Subscription salva:', subData)
 
     // Atualizar plano ativo do usuário
-    await admin.from('users').update({
+    const { data: userData, error: userError } = await admin.from('users').update({
       active_plan: plan,
       plan_period: period,
       plan_status: 'active',
       plan_end_date: endDate.toISOString(),
-      recipe_generations_limit: plan === 'pro' ? 999999 : 60,
+      recipe_generations_limit: plan === 'pro' ? 999999 : (plan === 'test' ? 60 : 60),
       recipe_generations_used: 0,
       generation_cycle_start: startDate.toISOString(),
-    }).eq('id', userId)
+    }).eq('id', userId).select()
+
+    if (userError) {
+      console.error('[subscription] Erro ao atualizar user:', userError)
+      return { error: `Erro ao atualizar usuário: ${userError.message}` }
+    }
+
+    console.log('[subscription] User atualizado:', userData)
 
     return { success: true, subscriptionId: subscription.id }
 
