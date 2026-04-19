@@ -35,6 +35,25 @@ declare global {
   }
 }
 
+/** Valida CPF brasileiro — dígitos verificadores. */
+function validateCPF(raw: string): boolean {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length !== 11) return false
+  // Rejeita sequências repetidas (111...1)
+  if (/^(\d)\1{10}$/.test(digits)) return false
+
+  const calc = (len: number) => {
+    const sum = digits
+      .slice(0, len)
+      .split('')
+      .reduce((acc, d, i) => acc + Number(d) * (len + 1 - i), 0)
+    const rem = (sum * 10) % 11
+    return rem === 10 ? 0 : rem
+  }
+
+  return calc(9) === Number(digits[9]) && calc(10) === Number(digits[10])
+}
+
 export default function PaymentModal({
   isOpen, onClose, plan, period, price, userId
 }: PaymentModalProps) {
@@ -150,6 +169,13 @@ export default function PaymentModal({
             identificationNumber,
             identificationType,
           })
+
+          // Validar CPF antes de enviar ao MP
+          if (!validateCPF(identificationNumber ?? '')) {
+            setError('CPF inválido. Verifique os números e tente novamente.')
+            setLoading(false)
+            return
+          }
 
           // Garantir que identificationType seja 'CPF' se não vier preenchido
           const finalIdentificationType = identificationType || 'CPF'

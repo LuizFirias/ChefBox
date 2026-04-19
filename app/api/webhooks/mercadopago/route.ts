@@ -168,19 +168,43 @@ export async function POST(req: NextRequest) {
 
         if (payment.status === 'approved') {
           // Renovação aprovada — resetar contador de gerações se for Básico
-          const sub = await admin
-            .from('subscriptions')
-            .select('user_id, plan_type')
-            .eq('mp_subscription_id', payment.metadata?.preapproval_id)
-            .single()
+          let subData: { user_id: string; plan_type: string | null } | null = null
 
-          if (sub.data?.plan_type === 'basic') {
+          const preapprovalId = payment.metadata?.preapproval_id
+          if (preapprovalId) {
+            const { data } = await admin
+              .from('subscriptions')
+              .select('user_id, plan_type')
+              .eq('mp_subscription_id', preapprovalId)
+              .maybeSingle()
+            subData = data
+          }
+
+          // Fallback: usar external_reference (userId) do próprio pagamento
+          if (!subData) {
+            const userId = payment.external_reference
+            if (userId) {
+              console.warn('[mp-webhook] payment sem preapproval_id, usando external_reference como fallback:', userId)
+              const { data } = await admin
+                .from('subscriptions')
+                .select('user_id, plan_type')
+                .eq('user_id', userId)
+                .eq('plan_type', 'basic')
+                .eq('status', 'active')
+                .maybeSingle()
+              subData = data
+            } else {
+              console.error('[mp-webhook] payment sem preapproval_id e sem external_reference — contador Básico não resetado')
+            }
+          }
+
+          if (subData?.plan_type === 'basic') {
             await admin.from('users')
               .update({
                 recipe_generations_used: 0,
                 generation_cycle_start: new Date().toISOString(),
               })
-              .eq('id', sub.data.user_id)
+              .eq('id', subData.user_id)
           }
         }
         break
