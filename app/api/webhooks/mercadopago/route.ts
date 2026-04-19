@@ -1,10 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { MercadoPagoConfig, PreApproval } from 'mercadopago'
+import { createHmac } from 'crypto'
 
 const mp = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 })
+
+/**
+ * Valida a assinatura do webhook do Mercado Pago.
+ * Formato: x-signature: ts=<timestamp>,v1=<hmac>
+ * Template: id:<notification_id>;request-id:<x-request-id>;ts:<timestamp>
+ * Ref: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+ */
+function validateMpSignature(req: NextRequest, notificationId: string): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET
+  if (!secret) {
+    // Sem secret configurado: aceitar mas logar aviso
+    console.warn('[mp-webhook] MP_WEBHOOK_SECRET não configurado — assinatura não validada')
+    return true
+  }
+
+  const xSignature = req.headers.get('x-signature')
+  const xRequestId = req.headers.get('x-request-id') ?? ''
+
+  if (!xSignature) {
+    console.error('[mp-webhook] Header x-signature ausente')
+    return false
+  }
+
+  // Extrair ts e v1 do header
+  const parts = Object.fromEntries(
+    xSignature.split(',').map(part => part.split('=').map(s => s.trim()) as [string, string])
+  )
+  const ts = parts['ts']
+  const v1 = parts['v1']
+
+  if (!ts || !v1) {
+    console.error('[mp-webhook] Header x-signature malformado:', xSignature)
+    return false
+  }
+
+  const template = `id:${notificationId};request-id:${xRequestId};ts:${ts}`
+  const expected = createHmac('sha256', secret).update(template).digest('hex')
+
+  if (expected !== v1) {
+    console.error('[mp-webhook] Assinatura inválida')
+    return false
+  }
+
+  return true
+}
 
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown> = {}
@@ -17,6 +63,13 @@ export async function POST(req: NextRequest) {
 
   const { type, data } = body as { type?: string; data?: { id?: string } }
 
+  const notificationId = String(data?.id ?? body?.id ?? '')
+
+  // Validar assinatura do MP
+  if (!validateMpSignature(req, notificationId)) {
+    return NextResponse.json({ received: false, error: 'Invalid signature' }, { status: 401 })
+  }
+
   const admin = createSupabaseAdminClient()
 
   if (!admin) {
@@ -24,7 +77,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: false, error: 'Database connection error' }, { status: 500 })
   }
 
-  console.log('[mp-webhook]', type, data?.id)
+  console.log('[mp-webhook]', type, notificationId)
+
+  // Idempotência: checar se este evento já foi processado
+  if (notificationId && type) {
+    const eventKey = `${type}:${notificationId}`
+    const { data: existing } = await (admin as any)
+      .from('processed_webhook_events')
+      .select('id')
+      .eq('event_key', eventKey)
+      .maybeSingle()
+
+    if (existing) {
+      console.log('[mp-webhook] Evento já processado, ignorando:', eventKey)
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
+    // Registrar como processado antes de executar a lógica (previne race conditions)
+    await (admin as any).from('processed_webhook_events').insert({
+      event_key: eventKey,
+      event_type: type,
+      notification_id: notificationId,
+      processed_at: new Date().toISOString(),
+    }).select()
+  }
 
   try {
     switch (type) {
@@ -32,42 +108,51 @@ export async function POST(req: NextRequest) {
       // Assinatura criada ou atualizada
       case 'subscription_preapproval': {
         const preapproval = new PreApproval(mp)
-        const sub = await preapproval.get({ id: data?.id ?? '' })
+        const sub = await preapproval.get({ id: notificationId })
 
         const userId = sub.external_reference // ID do usuário que passamos na criação
 
         if (!userId) {
-          console.error('[mp-webhook] external_reference ausente')
-          break
+          // Fallback: buscar pelo mp_subscription_id no Supabase
+          console.error('[mp-webhook] external_reference ausente, tentando fallback por mp_subscription_id')
+          const { data: subRecord } = await admin
+            .from('subscriptions')
+            .select('user_id')
+            .eq('mp_subscription_id', notificationId)
+            .maybeSingle()
+          if (!subRecord?.user_id) {
+            console.error('[mp-webhook] Usuário não encontrado para subscription:', notificationId)
+            break
+          }
         }
+
+        const resolvedUserId = userId || ''
 
         if (sub.status === 'authorized') {
           // Assinatura ativa — garantir que o usuário tem acesso
           await admin.from('subscriptions')
             .update({ status: 'active' })
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .eq('mp_subscription_id', data!.id!)
+            .eq('mp_subscription_id', notificationId)
 
           await admin.from('users')
             .update({ plan_status: 'active' })
-            .eq('id', userId)
+            .eq('id', resolvedUserId)
 
         } else if (sub.status === 'cancelled' || sub.status === 'paused') {
           // Assinatura cancelada ou pausada
           await admin.from('subscriptions')
             .update({ status: 'cancelled' })
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .eq('mp_subscription_id', data!.id!)
+            .eq('mp_subscription_id', notificationId)
 
           // Recalcular plano ativo
-          await recalculateUserPlan(userId, admin)
+          await recalculateUserPlan(resolvedUserId, admin)
         }
         break
       }
 
       // Pagamento de renovação
       case 'payment': {
-        const paymentId = data?.id
+        const paymentId = notificationId
         if (!paymentId) break
 
         // Buscar detalhes do pagamento no MP

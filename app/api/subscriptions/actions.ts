@@ -50,7 +50,38 @@ export async function createSubscription(params: CreateSubscriptionParams) {
     plan, period, userId,
   } = params
 
+  // Validar que o userId existe no banco antes de chamar o MP
+  const admin = createSupabaseAdminClient()
+  if (!admin) {
+    return { error: 'Erro ao conectar com banco de dados' }
+  }
+
+  const { data: userExists } = await admin
+    .from('users')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (!userExists) {
+    console.error('[subscription] userId inválido ou sessão expirada:', userId)
+    return { error: 'Sessão expirada. Faça login novamente.' }
+  }
+
+  // Idempotência: verificar se já existe assinatura ativa para este plano/período
   const planKey = `${plan}_${period}` as keyof typeof PLAN_PRICES
+  const { data: existingSub } = await admin
+    .from('subscriptions')
+    .select('id, status, mp_subscription_id')
+    .eq('user_id', userId)
+    .eq('plan_type', plan)
+    .eq('plan_period', period)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (existingSub) {
+    console.warn('[subscription] Assinatura já existe para este usuário/plano:', existingSub.id)
+    return { success: true, subscriptionId: existingSub.mp_subscription_id, alreadyActive: true }
+  }
   const amount = PLAN_PRICES[planKey]
   const freq = FREQUENCY_MAP[period]
 
@@ -125,14 +156,6 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       return { error: 'Erro ao criar assinatura' }
     }
 
-    // Salvar no Supabase
-    const admin = createSupabaseAdminClient()
-
-    if (!admin) {
-      console.error('[subscription] Erro: Admin client não inicializado')
-      return { error: 'Erro ao conectar com banco de dados' }
-    }
-
     console.log('[subscription] Salvando no Supabase...')
     console.log('[subscription] User ID:', userId)
     console.log('[subscription] MP Subscription ID:', subscription.id)
@@ -152,7 +175,12 @@ export async function createSubscription(params: CreateSubscriptionParams) {
     }).select()
 
     if (subError) {
-      console.error('[subscription] Erro ao inserir subscription:', subError)
+      // CRÍTICO: MP criou a assinatura mas Supabase falhou
+      // O mp_subscription_id precisa ser preservado para conciliação manual
+      console.error('[subscription] CRÍTICO: Supabase insert falhou após MP criar assinatura.')
+      console.error('[subscription] MP Subscription ID para conciliação manual:', subscription.id)
+      console.error('[subscription] User ID:', userId)
+      console.error('[subscription] Erro Supabase:', subError)
       return { error: `Erro ao salvar assinatura: ${subError.message}` }
     }
 
