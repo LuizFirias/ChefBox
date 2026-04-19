@@ -235,10 +235,10 @@ export default function PlanosPage() {
 
       {/* Plans Grid */}
       <section className="px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3 lg:items-center">
 
           {/* Plano Lifetime — extrema esquerda */}
-          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-lg transition hover:shadow-xl">
+          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-lg transition hover:shadow-xl lg:scale-95 lg:order-1">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-slate-900">
               💎 Pagamento Único
             </div>
@@ -275,8 +275,52 @@ export default function PlanosPage() {
             <p className="mt-4 text-center text-xs text-slate-400">🚫 Geração de receitas por IA não inclusa</p>
           </article>
 
+          {/* Plano Pro — destaque no centro com melhor custo-benefício */}
+          <article className="relative rounded-[28px] border-2 border-[#FF6B35] bg-white p-6 sm:p-8 shadow-xl ring-4 ring-[#FF6B35]/10 transition hover:shadow-2xl lg:scale-105 lg:order-2">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FF6B35] px-3 py-1 text-xs font-bold text-white">
+              ⭐ Melhor Custo-Benefício
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold uppercase tracking-wider text-[#FF6B35]">Pro</p>
+              <h3 className="mt-2 text-4xl font-bold text-slate-900">
+                {proPlan.priceLabel}
+              </h3>
+              <p className="text-sm font-normal text-slate-500">{proPlan.periodLabel}</p>
+              {proPlan.savings && (
+                <p className="mt-1 text-xs font-medium text-green-600">{proPlan.savings}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => handleCheckout(proPlan.checkoutKey)}
+                className="mt-6 w-full rounded-2xl bg-[#FF6B35] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#FF8C42]"
+              >
+                Assinar Pro
+              </button>
+              <p className="mt-3 text-xs text-slate-400">
+                🔄 Renova automaticamente
+              </p>
+            </div>
+            <ul className="mt-6 space-y-2.5">
+              {[
+                "Geração por IA: ILIMITADA",
+                "Planejador semanal de refeições",
+                "Lista de mercado inteligente",
+                "Calculadora de macros detalhada",
+                "Histórico completo de receitas",
+                "Salvos ilimitados",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#FF6B35]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="m5 13 4 4L19 7" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </article>
+
           {/* Plano Básico */}
-          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-lg transition hover:shadow-xl">
+          <article className="relative rounded-[28px] border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-lg transition hover:shadow-xl lg:scale-95 lg:order-3">
             <div className="text-center">
               <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Básico</p>
               <h3 className="mt-2 text-3xl font-bold text-slate-900">
@@ -306,50 +350,6 @@ export default function PlanosPage() {
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600">
                   <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#4D7C4F]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="m5 13 4 4L19 7" />
-                  </svg>
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </article>
-
-          {/* Plano Pro — destaque com melhor custo-benefício */}
-          <article className="relative rounded-[28px] border-2 border-[#FF6B35] bg-white p-6 sm:p-8 shadow-xl ring-4 ring-[#FF6B35]/10 transition hover:shadow-2xl">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FF6B35] px-3 py-1 text-xs font-bold text-white">
-              ⭐ Melhor Custo-Benefício
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold uppercase tracking-wider text-[#FF6B35]">Pro</p>
-              <h3 className="mt-2 text-3xl font-bold text-slate-900">
-                {proPlan.priceLabel}
-              </h3>
-              <p className="text-sm font-normal text-slate-500">{proPlan.periodLabel}</p>
-              {proPlan.savings && (
-                <p className="mt-1 text-xs font-medium text-green-600">{proPlan.savings}</p>
-              )}
-              <button
-                type="button"
-                onClick={() => handleCheckout(proPlan.checkoutKey)}
-                className="mt-6 w-full rounded-2xl bg-[#FF6B35] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#FF8C42]"
-              >
-                Assinar Pro
-              </button>
-              <p className="mt-3 text-xs text-slate-400">
-                🔄 Renova automaticamente
-              </p>
-            </div>
-            <ul className="mt-6 space-y-2.5">
-              {[
-                "Geração por IA: ILIMITADA",
-                "Planejador semanal de refeições",
-                "Lista de mercado inteligente",
-                "Calculadora de macros detalhada",
-                "Histórico completo de receitas",
-                "Salvos ilimitados",
-              ].map((f) => (
-                <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600">
-                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#FF6B35]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="m5 13 4 4L19 7" />
                   </svg>
                   {f}

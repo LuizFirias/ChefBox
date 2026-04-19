@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAccessControl, useRecipeUsage } from "@/lib/hooks/useAccessControl";
 import { ProBadge } from "@/components/shared/pro-badge";
 import { UsageIndicator } from "@/components/shared/usage-indicator";
+import { PlanCard } from "@/components/shared/plan-card";
 
 type AccountScreenProps = {
   isPremium: boolean;
@@ -144,6 +145,9 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
         </p>
       </article>
 
+      {/* Plan Card - mostra plano atual e contador de gerações */}
+      <PlanCard variant="full" />
+
       <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
           Acesso
@@ -280,6 +284,18 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
             {hasLimit && (
               <div className="mt-4">
                 <UsageIndicator variant="compact" />
+              </div>
+            )}
+            
+            {/* CTA para upgrade se não for Pro */}
+            {!isPro && (
+              <div className="mt-4">
+                <a
+                  href="/planos"
+                  className="inline-flex items-center rounded-2xl bg-gradient-to-r from-[#FF6B35] to-[#FF8C42] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  {isBasic ? "Fazer upgrade para Pro" : "Ver planos premium"} →
+                </a>
               </div>
             )}
           </>
