@@ -15,6 +15,12 @@ type UserPlanInfo = {
   recipeGenerationsUsed: number;
   recipeGenerationsLimit: number;
   canAccessMealPlanner: boolean;
+  plannerUsed: number;
+  plannerLimit: number;
+  macroTextUsed: number;
+  macroTextLimit: number;
+  photoAnalysisUsed: number;
+  photoAnalysisLimit: number;
 };
 
 /**

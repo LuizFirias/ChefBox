@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { hasPremiumAccess } from "@/lib/usage";
-import { canAccessFeature, getUserPlanInfo } from "@/lib/access-control";
+import { getMonthlyFeatureUsed } from "@/lib/usage";
+import { canAccessFeature, getUserPlanInfo, getPlanLimit } from "@/lib/access-control";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Feature } from "@/lib/types";
 
@@ -76,6 +77,15 @@ export async function GET(request: NextRequest) {
     const planInfo = await getUserPlanInfo(user.id);
     const mealPlannerAccess = await canAccessFeature(user.id, "planner");
 
+    const planType = planInfo?.planType ?? null;
+
+    // Buscar uso mensal de cada feature
+    const [plannerUsed, macroTextUsed, photoAnalysisUsed] = await Promise.all([
+      getMonthlyFeatureUsed(user.id, "meal_plan"),
+      getMonthlyFeatureUsed(user.id, "macro_text"),
+      getMonthlyFeatureUsed(user.id, "photo_analysis"),
+    ]);
+
     return NextResponse.json({
       planType: planInfo?.planType || null,
       planStatus: planInfo?.planStatus || null,
@@ -83,6 +93,13 @@ export async function GET(request: NextRequest) {
       recipeGenerationsLimit: planInfo?.recipeGenerationsLimit || 0,
       canAccessMealPlanner: mealPlannerAccess.allowed,
       isPremium: planInfo?.planType === "pro" || planInfo?.planType === "basic" || planInfo?.planType === "test",
+      // Usage detalhado por feature
+      plannerUsed,
+      plannerLimit: getPlanLimit("planner", planType),
+      macroTextUsed,
+      macroTextLimit: getPlanLimit("macro_text", planType),
+      photoAnalysisUsed,
+      photoAnalysisLimit: getPlanLimit("photo_analysis", planType),
     });
   }
 

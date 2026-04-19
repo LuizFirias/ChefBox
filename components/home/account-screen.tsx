@@ -4,9 +4,54 @@ import { useEffect, useState } from "react";
 
 import { getAccountProfile, saveAccountProfile } from "@/lib/app-storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useAccessControl, useRecipeUsage } from "@/lib/hooks/useAccessControl";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import { ProBadge } from "@/components/shared/pro-badge";
-import { UsageIndicator } from "@/components/shared/usage-indicator";
+
+function UsageRow({ label, used, limit }: { label: string; used: number; limit: number }) {
+  if (limit === 0) {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-slate-500">{label}</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-400">
+          Indisponível
+        </span>
+      </div>
+    );
+  }
+
+  const isUnlimited = limit === Infinity || limit >= 999999;
+  if (isUnlimited) {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-slate-500">{label}</span>
+        <span className="rounded-full bg-[#EEF5EE] px-2 py-0.5 text-xs font-semibold text-[#4D7C4F]">
+          Ilimitado
+        </span>
+      </div>
+    );
+  }
+
+  const pct = Math.min((used / limit) * 100, 100);
+  const remaining = Math.max(limit - used, 0);
+  const isNear = used >= limit * 0.8;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-slate-500">{label}</span>
+        <span className={`text-xs font-semibold ${isNear ? "text-amber-600" : "text-slate-600"}`}>
+          {remaining} restante{remaining !== 1 ? "s" : ""} ({used}/{limit})
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full transition-all ${isNear ? "bg-amber-500" : "bg-[#4D7C4F]"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 type AccountScreenProps = {
   isPremium: boolean;
@@ -24,7 +69,6 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
   
   // Usar hook de controle de acesso
   const { loading: accessLoading, planType, planInfo, isPro, isBasic, isLifetime, isTest } = useAccessControl();
-  const { used, limit, hasLimit } = useRecipeUsage();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -207,12 +251,29 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
               )}
             </div>
             
-            {/* Indicador de uso para planos com limite */}
-            {hasLimit && (
-              <div className="mt-4">
-                <UsageIndicator variant="compact" />
-              </div>
-            )}
+            {/* Contadores de uso por feature */}
+            <div className="mt-4 space-y-3">
+              <UsageRow
+                label="Receitas geradas"
+                used={planInfo?.recipeGenerationsUsed ?? 0}
+                limit={planInfo?.recipeGenerationsLimit ?? 0}
+              />
+              <UsageRow
+                label="Planejamentos"
+                used={planInfo?.plannerUsed ?? 0}
+                limit={planInfo?.plannerLimit ?? 0}
+              />
+              <UsageRow
+                label="Macros por texto"
+                used={planInfo?.macroTextUsed ?? 0}
+                limit={planInfo?.macroTextLimit ?? 0}
+              />
+              <UsageRow
+                label="Análise de foto"
+                used={planInfo?.photoAnalysisUsed ?? 0}
+                limit={planInfo?.photoAnalysisLimit ?? 0}
+              />
+            </div>
             
             {/* CTA para upgrade se não for Pro */}
             {!isPro && (

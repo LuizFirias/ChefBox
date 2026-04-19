@@ -199,6 +199,29 @@ async function consumeMonthlyFeature(
 }
 
 /**
+ * Lê o contador mensal de qualquer feature da tabela usage_limits sem consumir.
+ */
+export async function getMonthlyFeatureUsed(
+  userId: string,
+  featureKey: string,
+): Promise<number> {
+  const admin = createSupabaseAdminClient();
+  if (!admin) return 0;
+
+  const usageMonth = getMonthKey();
+  const key = `user:${userId}:${featureKey}`;
+
+  const { data } = await admin
+    .from("usage_limits")
+    .select("used_count")
+    .eq("subject_key", key)
+    .eq("usage_date", usageMonth)
+    .maybeSingle();
+
+  return (data as any)?.used_count ?? 0;
+}
+
+/**
  * Verifica uso do meal planner (sem consumir)
  */
 export async function getMealPlanUsage(
