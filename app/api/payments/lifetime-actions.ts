@@ -32,6 +32,8 @@ export async function createLifetimePixPayment(userId: string) {
       body: {
         transaction_amount: 37.00,
         description: 'Chefbox Plano Vitalício',
+        statement_descriptor: 'CHEFBOX',
+        notification_url: 'https://www.chefbox.com.br/api/webhooks/mercadopago',
         payment_method_id: 'pix',
         payer: {
           email: userData.email,

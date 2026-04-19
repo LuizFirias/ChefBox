@@ -72,6 +72,7 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       external_reference: userId,
       payer_email: email,
       card_token_id: token,
+      notification_url: 'https://www.chefbox.com.br/api/webhooks/mercadopago',
       auto_recurring: {
         frequency: freq.frequency,
         frequency_type: freq.frequency_type,
