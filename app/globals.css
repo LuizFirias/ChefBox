@@ -199,6 +199,86 @@ button:not(:disabled):active {
 input:focus,
 textarea:focus,
 select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* === CUSTOM CHECKBOXES (Laranja) === */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-gray-300);
+  border-radius: 5px;
+  background-color: var(--bg-card);
+  cursor: pointer;
+  position: relative;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--color-primary);
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === MOBILE OPTIMIZATION === */
+@media (max-width: 768px) {
+  /* Botões mínimos 48px para toque */
+  button, 
+  a.button,
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 48px;
+  }
+  
+  /* Inputs mínimos 16px para evitar zoom no iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  
+  /* Bottom nav padding */
+  .with-bottom-nav {
+    padding-bottom: 80px;
+  }
+  
+  /* Safe area para notch */
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+  }
+}
+
+/* Focus states */
+select:focus {
   outline: none;
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(244, 113, 58, 0.1);

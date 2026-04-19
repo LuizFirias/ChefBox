@@ -24,25 +24,37 @@ export function SavedRecipesScreen({
 
   if (recipes.length === 0 && mealPlans.length === 0) {
     return (
-      <section className="mt-6 flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white p-12 text-center shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
-          🔖
+      <section className="mt-6 flex flex-col items-center justify-center px-6 py-8 text-center">
+        {/* SVG ilustração */}
+        <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#FFF0EB]">
+          <svg className="h-9 w-9 text-[#E05A2B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <circle cx="12" cy="12" r="10" strokeWidth={1.5} />
+          </svg>
         </div>
-        <h3 className="mt-5 text-xl font-bold text-[#1A1A2E]">
-          Nenhum item salvo ainda
+        
+        <h3 className="mt-6 text-[20px] font-bold leading-tight text-[#111827]">
+          Suas receitas favoritas ficam aqui
         </h3>
-        <p className="mt-2 max-w-xs text-sm leading-6 text-[#6B7280]">
-          Quando você salvar receitas ou planejamentos, eles aparecem aqui para consultar depois.
+        <p className="mt-2.5 max-w-[260px] text-sm leading-relaxed text-[#6B7280]">
+          Gere receitas com os ingredientes que você tem e salve as que mais gostar
         </p>
+        
         <button
           type="button"
           onClick={() => {
             const receitasTab = document.querySelector('[data-tab="receitas"]') as HTMLButtonElement;
             receitasTab?.click();
+            // Scroll para o formulário de ingredientes
+            setTimeout(() => {
+              const ingredientInput = document.querySelector('input[placeholder*="cenoura"]') as HTMLInputElement;
+              ingredientInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              ingredientInput?.focus();
+            }, 100);
           }}
-          className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl border-none bg-[#F4713A] px-7 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#E85D20] hover:shadow-lg active:scale-95"
+          className="mt-6 inline-flex h-[50px] items-center justify-center rounded-xl bg-[#E05A2B] px-6 text-sm font-semibold text-white transition hover:bg-[#C54E24]"
         >
-          Explorar receitas
+          Gerar minha primeira receita
         </button>
       </section>
     );
@@ -76,16 +88,33 @@ export function SavedRecipesScreen({
       </div>
 
       {activeTab === "recipes" && recipes.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white p-12 text-center shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
-            📖
+        <div className="flex flex-col items-center justify-center px-6 py-8 text-center">
+          {/* SVG ilustração */}
+          <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#FFF0EB]">
+            <svg className="h-9 w-9 text-[#E05A2B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <circle cx="12" cy="12" r="10" strokeWidth={1.5} />
+            </svg>
           </div>
-          <h3 className="mt-5 text-xl font-bold text-[#1A1A2E]">
-            Nenhuma receita salva ainda
+          
+          <h3 className="mt-6 text-[20px] font-bold leading-tight text-[#111827]">
+            Suas receitas favoritas ficam aqui
           </h3>
-          <p className="mt-2 max-w-xs text-sm leading-6 text-[#6B7280]">
-            Quando você salvar uma receita, ela aparece aqui.
+          <p className="mt-2.5 max-w-[260px] text-sm leading-relaxed text-[#6B7280]">
+            Gere receitas com os ingredientes que você tem e salve as que mais gostar
           </p>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("recipes");
+              const receitasTab = document.querySelector('[data-tab="receitas"]') as HTMLButtonElement;
+              receitasTab?.click();
+            }}
+            className="mt-6 inline-flex h-[50px] items-center justify-center rounded-xl bg-[#E05A2B] px-6 text-sm font-semibold text-white transition hover:bg-[#C54E24]"
+          >
+            Gerar minha primeira receita
+          </button>
         </div>
       )}
 

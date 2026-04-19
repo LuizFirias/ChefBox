@@ -20,6 +20,7 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   // Usar hook de controle de acesso
   const { loading: accessLoading, planType, planInfo, isPro, isBasic, isLifetime } = useAccessControl();
@@ -138,6 +139,11 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
     const supabase = createSupabaseBrowserClient();
     
     if (!supabase) return;
+    
+    if (!showLogoutConfirm) {
+      setShowLogoutConfirm(true);
+      return;
+    }
     
     setIsLoggingOut(true);
     await supabase.auth.signOut({ scope: "local" });
@@ -258,7 +264,7 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
               placeholder="Como você quer aparecer"
             />
           </label>
-          <div className="flex gap-2">
+          <div>
             <button
               type="button"
               onClick={handleResetPassword}
@@ -266,17 +272,18 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
             >
               Redefinir senha
             </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#DC2626] bg-white px-4 text-sm font-semibold text-[#DC2626] hover:bg-red-50 transition disabled:opacity-50"
-            >
-              {isLoggingOut ? "Saindo..." : "Sair da conta"}
-            </button>
             {resetMessage && (
               <p className="mt-2 text-sm text-slate-600">{resetMessage}</p>
             )}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={handleSaveProfile}
+              className="inline-flex w-full min-h-11 items-center justify-center rounded-2xl bg-[#E05A2B] px-6 text-sm font-semibold text-white hover:bg-[#C54E24] transition"
+            >
+              Salvar alterações
+            </button>
           </div>
         </div>
       </article>
@@ -338,7 +345,7 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
           >
             Termos de Uso
           </a>
-          <span className="text-slate-300">•</span>
+          <span className="text-[#9CA3AF]">|</span>
           <a
             href="/privacidade"
             target="_blank"
@@ -348,10 +355,55 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
             Política de Privacidade
           </a>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+        <p className="mt-3 text-xs leading-relaxed text-[#6B7280]">
           Ao usar o ChefBox, você concorda com nossos termos e políticas. Seus dados são protegidos
           conforme a LGPD (Lei Geral de Proteção de Dados).
         </p>
+      </article>
+
+      {/* Sessão */}
+      <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_rgba(45,49,66,0.06)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+          Sessão
+        </p>
+        
+        {showLogoutConfirm && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">
+              Tem certeza que deseja sair?
+            </p>
+            <p className="mt-1 text-xs text-amber-800">
+              Você precisará fazer login novamente para acessar sua conta.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-[#2D3142] transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="inline-flex min-h-9 items-center justify-center rounded-xl bg-[#DC2626] px-4 text-sm font-semibold text-white transition hover:bg-[#B91C1C] disabled:opacity-50"
+              >
+                {isLoggingOut ? "Saindo..." : "Sim, sair"}
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {!showLogoutConfirm && (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-4 inline-flex w-full min-h-11 items-center justify-center rounded-2xl border border-[#DC2626] bg-white px-4 text-sm font-semibold text-[#DC2626] hover:bg-red-50 transition"
+          >
+            Sair da conta
+          </button>
+        )}
       </article>
     </section>
   );
