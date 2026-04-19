@@ -38,6 +38,87 @@ type GenerateRecipesPayload = {
   unusedIngredients?: string[];
 };
 
+// Seção colapsável de receitas geradas
+function RecipesResultSection({
+  recipes,
+  savedRecipes,
+  unusedIngredients,
+  onSaveRecipe,
+}: {
+  recipes: Recipe[];
+  savedRecipes: Recipe[];
+  unusedIngredients: string[];
+  onSaveRecipe: (recipe: Recipe) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <section className="rounded-[24px] border border-slate-200 bg-white shadow-[0_8px_24px_rgba(45,49,66,0.06)]">
+      {/* Header sempre visível */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-[#2D3142]">Suas receitas</span>
+          <span className="rounded-full bg-[#EEF5EE] px-2 py-0.5 text-xs font-semibold text-[#4D7C4F]">
+            {recipes.length}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-100"
+        >
+          {collapsed ? (
+            <>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="2.2">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+              Expandir
+            </>
+          ) : (
+            <>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="2.2">
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+              Minimizar
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Conteúdo colapsável */}
+      {!collapsed && (
+        <div className="space-y-2 border-t border-slate-100 px-3 pb-3 pt-2">
+          {unusedIngredients.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                Não utilizados
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {unusedIngredients.map((ing) => (
+                  <span
+                    key={ing}
+                    className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-300"
+                  >
+                    {ing}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {recipes.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              isSaved={savedRecipes.some((s) => s.id === recipe.id)}
+              onSaveRecipe={onSaveRecipe}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 type TabId = "receitas" | "planner" | "saved" | "lists" | "macros" | "account";
 
 // Ícone de utensílios de cozinha
@@ -669,43 +750,12 @@ export function HomeScreen() {
               {/* RIGHT COLUMN - Preview & Benefits */}
               <div className="space-y-6">
                 {recipes.length > 0 ? (
-                  <section>
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-[#2D3142]">Suas receitas</h2>
-                      <Link href={`/dashboard?recipe=${recipes[0]?.id ?? ""}`} className="text-sm font-semibold text-[#FF6B35] hover:text-[#FF8C42]">
-                        Ver detalhes →
-                      </Link>
-                    </div>
-
-                    {unusedIngredients.length > 0 && (
-                      <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                          Não utilizados nesta geração
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {unusedIngredients.map((ing) => (
-                            <span
-                              key={ing}
-                              className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-300"
-                            >
-                              {ing}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      {recipes.map((recipe) => (
-                        <RecipeCard
-                          key={recipe.id}
-                          recipe={recipe}
-                          isSaved={savedRecipes.some((savedRecipe) => savedRecipe.id === recipe.id)}
-                          onSaveRecipe={handleSaveRecipe}
-                        />
-                      ))}
-                    </div>
-                  </section>
+                  <RecipesResultSection
+                    recipes={recipes}
+                    savedRecipes={savedRecipes}
+                    unusedIngredients={unusedIngredients}
+                    onSaveRecipe={handleSaveRecipe}
+                  />
                 ) : (
                   <>
                     {/* Benefits cards */}
