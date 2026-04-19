@@ -7,8 +7,15 @@ const mp = new MercadoPagoConfig({
 })
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { type, data } = body
+  let body: Record<string, unknown> = {}
+  try {
+    body = await req.json()
+  } catch {
+    // Body vazio ou inválido — ainda retorna 200 para o MP não reenviar
+    return NextResponse.json({ received: true })
+  }
+
+  const { type, data } = body as { type?: string; data?: { id?: string } }
 
   const admin = createSupabaseAdminClient()
 
@@ -25,7 +32,7 @@ export async function POST(req: NextRequest) {
       // Assinatura criada ou atualizada
       case 'subscription_preapproval': {
         const preapproval = new PreApproval(mp)
-        const sub = await preapproval.get({ id: data.id })
+        const sub = await preapproval.get({ id: data?.id ?? '' })
 
         const userId = sub.external_reference // ID do usuário que passamos na criação
 
@@ -38,7 +45,8 @@ export async function POST(req: NextRequest) {
           // Assinatura ativa — garantir que o usuário tem acesso
           await admin.from('subscriptions')
             .update({ status: 'active' })
-            .eq('mp_subscription_id', data.id)
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            .eq('mp_subscription_id', data!.id!)
 
           await admin.from('users')
             .update({ plan_status: 'active' })
@@ -48,7 +56,8 @@ export async function POST(req: NextRequest) {
           // Assinatura cancelada ou pausada
           await admin.from('subscriptions')
             .update({ status: 'cancelled' })
-            .eq('mp_subscription_id', data.id)
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            .eq('mp_subscription_id', data!.id!)
 
           // Recalcular plano ativo
           await recalculateUserPlan(userId, admin)
@@ -58,7 +67,8 @@ export async function POST(req: NextRequest) {
 
       // Pagamento de renovação
       case 'payment': {
-        const paymentId = data.id
+        const paymentId = data?.id
+        if (!paymentId) break
 
         // Buscar detalhes do pagamento no MP
         const paymentRes = await fetch(
