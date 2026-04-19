@@ -12,6 +12,11 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip for PWA files
+  if (pathname === "/manifest.webmanifest" || pathname === "/sw.js") {
+    return NextResponse.next();
+  }
+
   // Webhooks externos: nunca exigem auth e devem passar sem qualquer interceptação
   if (pathname.startsWith("/api/webhooks/")) {
     return NextResponse.next();
