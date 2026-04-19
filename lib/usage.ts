@@ -60,8 +60,8 @@ async function getPremiumStatus(userId: string | null) {
     return { isPremium: false, persisted: true };
   }
 
-  // Pro é premium, Basic também é considerado premium para features básicas
-  const isPremium = planInfo.planType === "pro" || planInfo.planType === "basic";
+  // Pro é premium, Basic e Test também são considerados premium para features básicas
+  const isPremium = planInfo.planType === "pro" || planInfo.planType === "basic" || planInfo.planType === "test";
 
   return {
     isPremium: isPremium && planInfo.planStatus === "active",

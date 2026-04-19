@@ -117,6 +117,7 @@ export function useAccessControl(feature?: Feature) {
     isPro: accessCheck.planType === "pro",
     isBasic: accessCheck.planType === "basic",
     isLifetime: accessCheck.planType === "lifetime",
+    isTest: accessCheck.planType === "test",
   };
 }
 

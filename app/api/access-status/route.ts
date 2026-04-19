@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       recipeGenerationsUsed: planInfo?.recipeGenerationsUsed || 0,
       recipeGenerationsLimit: planInfo?.recipeGenerationsLimit || 0,
       canAccessMealPlanner: mealPlannerAccess.allowed,
-      isPremium: planInfo?.planType === "pro" || planInfo?.planType === "basic",
+      isPremium: planInfo?.planType === "pro" || planInfo?.planType === "basic" || planInfo?.planType === "test",
     });
   }
 

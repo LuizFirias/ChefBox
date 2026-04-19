@@ -133,6 +133,10 @@ export function HomeScreen() {
 
   useEffect(() => {
     setMounted(true);
+    // Ler tab da URL (?tab=account etc.)
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab") as TabId | null;
+    if (tabParam) setActiveTab(tabParam);
     // Carregar receitas geradas do localStorage (só desaparecem ao gerar novas)
     setRecipes(getGeneratedRecipes());
     setSavedRecipes(getSavedRecipes());

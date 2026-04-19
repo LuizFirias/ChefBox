@@ -23,7 +23,7 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   // Usar hook de controle de acesso
-  const { loading: accessLoading, planType, planInfo, isPro, isBasic, isLifetime } = useAccessControl();
+  const { loading: accessLoading, planType, planInfo, isPro, isBasic, isLifetime, isTest } = useAccessControl();
   const { used, limit, hasLimit } = useRecipeUsage();
 
   useEffect(() => {
@@ -177,9 +177,9 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
             <div className="mt-3">
               <div className="flex items-center gap-2">
                 <p className="text-3xl font-bold text-[#2D3142]">
-                  {isPro ? "Pro" : isBasic ? "Básico" : isLifetime ? "Lifetime" : "Free"}
+                  {isPro ? "Pro" : isBasic ? "Básico" : isLifetime ? "Lifetime" : isTest ? "Teste" : "Free"}
                 </p>
-                {(isPro || isBasic) && (
+                {(isPro || isBasic || isTest) && (
                   <ProBadge 
                     variant={isPro ? "gradient" : "primary"} 
                     size="md" 
@@ -190,6 +190,7 @@ export function AccountScreen({ isPremium }: AccountScreenProps) {
                 {isPro && "Acesso completo a todas as funcionalidades premium"}
                 {isBasic && "Receitas mensais limitadas, sem acesso ao planejador"}
                 {isLifetime && "Receitas básicas sem custo mensal"}
+                {isTest && "Plano de teste ativo — integração validada"}
                 {!planType && "Crie receitas com limite diário"}
               </p>
               

@@ -63,9 +63,9 @@ export function AuthButton() {
   if (userEmail) {
     return (
       <Link
-        href="/"
+        href="/?tab=account"
         className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#E05A2B] to-[#FF8C42] text-white shadow-md transition hover:shadow-lg"
-        title="Ir para início"
+        title="Minha conta"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
