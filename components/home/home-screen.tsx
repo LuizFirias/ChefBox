@@ -148,8 +148,13 @@ export function HomeScreen() {
     // Listen for meal plan save events from other components
     window.addEventListener("mealPlanSaved", handleMealPlanSaved);
     window.addEventListener("shoppingListCreated", handleShoppingListCreated);
+    window.addEventListener("navigateToAccount", handleNavigateToAccount);
 
     let cancelled = false;
+
+    function handleNavigateToAccount() {
+      setActiveTab("account");
+    }
 
     function handleMealPlanSaved() {
       console.log("[home-screen] Received mealPlanSaved event, reloading...");
@@ -248,6 +253,7 @@ export function HomeScreen() {
       cancelled = true;
       window.removeEventListener("mealPlanSaved", handleMealPlanSaved);
       window.removeEventListener("shoppingListCreated", handleShoppingListCreated);
+      window.removeEventListener("navigateToAccount", handleNavigateToAccount);
     };
   }, []);
 

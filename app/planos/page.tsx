@@ -108,7 +108,7 @@ export default function PlanosPage() {
   const [activeGroup, setActiveGroup] = useState<PlanGroup>("pro");
   const [paymentModal, setPaymentModal] = useState<{
     isOpen: boolean;
-    plan: 'basic' | 'pro' | 'test';
+    plan: 'basic' | 'pro';
     period: 'monthly' | 'quarterly' | 'annual';
     price: number;
   }>({
@@ -162,19 +162,6 @@ export default function PlanosPage() {
       plan: planType,
       period: periodMap[activePeriod],
       price: plan.price,
-    });
-  }
-
-  function handleTestCheckout() {
-    if (!user) {
-      window.location.href = "/login?redirect=/planos";
-      return;
-    }
-    setPaymentModal({
-      isOpen: true,
-      plan: 'test',
-      period: 'monthly',
-      price: 1.00,
     });
   }
 
@@ -248,25 +235,6 @@ export default function PlanosPage() {
 
       {/* Plans Grid */}
       <section className="px-4 pb-24 sm:px-6 lg:px-8">
-        {/* Card de Teste — visível apenas para validar integração */}
-        <div className="mx-auto mb-6 max-w-sm">
-          <div className="rounded-2xl border border-dashed border-amber-400 bg-amber-50 p-4 text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">
-              🧪 Plano de Teste — R$ 1,00
-            </p>
-            <p className="mt-1 text-xs text-amber-600">
-              Apenas para validar a integração de pagamentos
-            </p>
-            <button
-              type="button"
-              onClick={handleTestCheckout}
-              className="mt-3 w-full rounded-xl border border-amber-400 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
-            >
-              Testar pagamento (R$ 1,00)
-            </button>
-          </div>
-        </div>
-
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3 lg:items-center">
 
           {/* Plano Lifetime — extrema esquerda */}

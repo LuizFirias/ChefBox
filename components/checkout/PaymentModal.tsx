@@ -13,7 +13,7 @@ import amexIcon from 'payment-icons/min/flat/amex.svg'
 interface PaymentModalProps {
   isOpen: boolean
   onClose: () => void
-  plan: 'basic' | 'pro' | 'test'
+  plan: 'basic' | 'pro'
   period: 'monthly' | 'quarterly' | 'annual'
   price: number
   userId: string
@@ -27,7 +27,6 @@ const PLAN_MAP = {
   pro_monthly:     { amount: 24.90, description: 'Chefbox Pro Mensal' },
   pro_quarterly:   { amount: 59.90, description: 'Chefbox Pro Trimestral' },
   pro_annual:      { amount: 199.90, description: 'Chefbox Pro Anual' },
-  test_monthly:    { amount: 1.00, description: 'Chefbox TESTE Mensal (R$ 1,00)' },
 }
 
 declare global {

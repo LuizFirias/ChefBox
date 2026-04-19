@@ -29,7 +29,6 @@ const PLAN_PRICES = {
   pro_monthly:      24.90,
   pro_quarterly:    59.90,
   pro_annual:      199.90,
-  test_monthly:      1.00,
 }
 
 interface CreateSubscriptionParams {
@@ -39,7 +38,7 @@ interface CreateSubscriptionParams {
   email: string
   identificationNumber: string
   identificationType: string
-  plan: 'basic' | 'pro' | 'test'
+  plan: 'basic' | 'pro'
   period: 'monthly' | 'quarterly' | 'annual'
   userId: string
 }
@@ -165,7 +164,7 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       plan_period: period,
       plan_status: 'active',
       plan_end_date: endDate.toISOString(),
-      recipe_generations_limit: plan === 'pro' ? 999999 : (plan === 'test' ? 60 : 60),
+      recipe_generations_limit: plan === 'pro' ? 999999 : 60,
       recipe_generations_used: 0,
       generation_cycle_start: startDate.toISOString(),
     }).eq('id', userId).select()
