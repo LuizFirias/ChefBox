@@ -23,6 +23,7 @@ import { IngredientInput } from "@/components/home/ingredient-input";
 import { ListsScreen } from "@/components/home/lists-screen";
 import { MacroCalculatorScreen } from "@/components/home/macro-calculator-screen";
 import { RecipeCard } from "@/components/home/recipe-card";
+import { RecipeLibraryScreen } from "@/components/home/recipe-library-screen";
 import { SavedRecipesScreen } from "@/components/home/saved-recipes-screen";
 import { MealPlanPage } from "@/components/meal-plan-page";
 import { AppButton } from "@/components/ui/app-button";
@@ -119,15 +120,25 @@ function RecipesResultSection({
   );
 }
 
-type TabId = "receitas" | "planner" | "saved" | "lists" | "macros" | "account";
+type TabId = "chef" | "acervo" | "planner" | "saved" | "lists" | "macros" | "account";
 
-// Ícone de utensílios de cozinha
-function ReceitasIcon() {
+// Ícone de touca de chef
+function ChefIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
       <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
       <path d="M7 2v20" />
       <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </svg>
+  );
+}
+
+// Ícone de livro aberto (acervo de receitas)
+function BookOpenIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
   );
 }
@@ -187,7 +198,7 @@ function MacrosIcon() {
 
 export function HomeScreen() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>("receitas");
+  const [activeTab, setActiveTab] = useState<TabId>("chef");
   const [inputValue, setInputValue] = useState("");
   const [servings, setServings] = useState(2);
   const [dishType, setDishType] = useState<"breakfast" | "lunch" | "snack" | "dinner">("lunch");
@@ -341,7 +352,8 @@ export function HomeScreen() {
   const premiumActive = usage?.isPremium ?? isPremium;
 
   const navItems = [
-    { id: "receitas" as const, label: "Receitas", icon: <ReceitasIcon /> },
+    { id: "chef" as const, label: "Chef", icon: <ChefIcon /> },
+    { id: "acervo" as const, label: "Receitas", icon: <BookOpenIcon /> },
     { id: "planner" as const, label: "Planejador", icon: <CalendarIcon /> },
     { id: "saved" as const, label: "Salvos", icon: <BookmarkIcon /> },
     { id: "lists" as const, label: "Mercado", icon: <CartIcon /> },
@@ -548,7 +560,7 @@ export function HomeScreen() {
       setUnusedIngredients(successPayload.unusedIngredients ?? []);
       setUsage(successPayload.usage);
       setIsPremium(successPayload.usage.isPremium);
-      setActiveTab("receitas");
+      setActiveTab("chef");
       setConfirmedParams(null);
     });
   }
@@ -556,7 +568,11 @@ export function HomeScreen() {
   return (
     <>
       <main className="mx-auto flex w-full flex-1 flex-col px-4 pb-20 pt-2 sm:px-6 md:max-w-7xl md:pb-24 md:pt-4">
-        {activeTab === "receitas" ? (
+        {activeTab === "acervo" ? (
+          <RecipeLibraryScreen />
+        ) : null}
+
+        {activeTab === "chef" ? (
           <>
             {/* Mobile header with logo */}
             <header className="mb-4 flex items-center justify-between md:hidden">
