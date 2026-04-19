@@ -620,17 +620,19 @@ export function HomeScreen() {
 
                 {/* Premium upsell - show on mobile or when no recipes */}
                 {recipes.length === 0 && hasLoadedAccess && !premiumActive && (
-                  <section className="rounded-3xl bg-linear-to-br from-[#FF6B35] to-[#FF8C42] p-5 text-white shadow-lg md:hidden">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-white/80">
-                      Premium
+                  <section className="flex items-center gap-3 rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 md:hidden">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E05A2B] text-white">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <p className="flex-1 text-xs font-semibold text-[#92400E]">
+                      Receitas ilimitadas + planejador semanal
                     </p>
-                    <h2 className="mt-2 text-2xl font-bold">
-                      Receitas ilimitadas
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-white/90">
-                      Destrave planejamento semanal, lista de compras e custos consolidados.
-                    </p>
-                    <Link href="/planos" className="mt-4 block w-full rounded-full bg-white px-6 py-3 text-center text-sm font-semibold text-[#FF6B35] transition hover:bg-white/95">
+                    <Link
+                      href="/planos"
+                      className="shrink-0 rounded-full bg-[#E05A2B] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#C54E24]"
+                    >
                       Ver planos
                     </Link>
                   </section>

@@ -246,6 +246,34 @@ export function MacroCalculatorScreen({ isPremium }: MacroCalculatorScreenProps)
             <p className="mt-0.5 text-base md:text-lg font-bold">{dailyTotals.fat_g.toFixed(1)}g</p>
           </div>
         </div>
+
+        {/* Progress bars — metas estimadas: 2000 kcal, 150g prot, 250g carb, 65g gord */}
+        {(dailyTotals.calories > 0 || dailyTotals.protein_g > 0) && (
+          <div className="mt-4 space-y-2.5">
+            {[
+              { label: "Calorias", value: dailyTotals.calories, goal: 2000, unit: "kcal", color: "bg-orange-400" },
+              { label: "Proteína", value: dailyTotals.protein_g, goal: 150, unit: "g", color: "bg-blue-400" },
+              { label: "Carboidrato", value: dailyTotals.carbs_g, goal: 250, unit: "g", color: "bg-yellow-400" },
+              { label: "Gordura", value: dailyTotals.fat_g, goal: 65, unit: "g", color: "bg-pink-400" },
+            ].map(({ label, value, goal, unit, color }) => {
+              const pct = Math.min(Math.round((value / goal) * 100), 100);
+              return (
+                <div key={label}>
+                  <div className="flex justify-between text-[10px] text-white/70">
+                    <span>{label}</span>
+                    <span>{value.toFixed(0)}{unit} / {goal}{unit}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/20">
+                    <div
+                      className={`h-full rounded-full transition-all ${color}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </article>
 
       {/* Mode Selector */}

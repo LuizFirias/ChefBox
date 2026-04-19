@@ -49,7 +49,22 @@ export function ListsScreen({
         </article>
 
         {/* Shopping Lists */}
-        {shoppingLists.length > 0 && (
+        {shoppingLists.length === 0 ? (
+          <div className="flex flex-col items-center px-6 py-8 text-center">
+            <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#F0F9F0]">
+              <svg className="h-9 w-9 text-[#4D7C4F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+            
+            <h3 className="mt-6 text-[20px] font-bold leading-tight text-[#111827]">
+              Nenhuma lista de compras ainda
+            </h3>
+            <p className="mt-2.5 max-w-[260px] text-sm leading-relaxed text-[#6B7280]">
+              Salve um planejamento semanal e sua lista de compras será gerada automaticamente
+            </p>
+          </div>
+        ) : (
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Listas de compras ({shoppingLists.length})
