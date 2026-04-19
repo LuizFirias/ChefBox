@@ -89,6 +89,20 @@ const FEATURE_INFO: Record<
     benefits: ["Análise detalhada de macros", "Micronutrientes", "Recomendações personalizadas"],
     suggestedPlan: "pro",
   },
+  macro_text: {
+    title: "Calculadora de Macros por Texto",
+    description: "Você atingiu o limite mensal de cálculos de macros. Faça upgrade para continuar.",
+    badge: "Plano Básico",
+    benefits: ["30 cálculos de macros/mês", "Análise nutricional detalhada"],
+    suggestedPlan: "basic",
+  },
+  photo_analysis: {
+    title: "Análise de Foto por IA",
+    description: "A análise de refeições por foto é exclusiva para assinantes. Faça upgrade para usar.",
+    badge: "Plano Básico",
+    benefits: ["15 análises de foto/mês", "Identificação automática de ingredientes"],
+    suggestedPlan: "basic",
+  },
 };
 
 export function PaywallModal({

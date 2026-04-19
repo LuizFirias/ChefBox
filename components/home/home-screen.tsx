@@ -318,6 +318,12 @@ export function HomeScreen() {
   }
 
   function handleSaveRecipe(recipe: Recipe) {
+    const currentSaved = getSavedRecipes();
+    const FREE_SAVE_LIMIT = 5;
+    if (!isPremium && currentSaved.length >= FREE_SAVE_LIMIT) {
+      alert(`No plano gratuito você pode salvar até ${FREE_SAVE_LIMIT} receitas. Faça upgrade para salvar mais.`);
+      return;
+    }
     setSavedRecipes(saveRecipe(recipe));
     setActiveTab("saved");
   }

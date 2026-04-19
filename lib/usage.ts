@@ -11,7 +11,9 @@ import {
 import { 
   canAccessFeature, 
   getUserPlanInfo, 
-  incrementRecipeGeneration 
+  incrementRecipeGeneration,
+  getPlanLimit,
+  PLAN_LIMITS,
 } from "@/lib/access-control";
 
 type AccessContext = {
@@ -98,72 +100,39 @@ function buildUsageState(
 
 /**
  * Consome uma geração de receita verificando o limite baseado no plano
- * Retorna se o usuário pode gerar e incrementa o contador
  */
 export async function consumeRecipeGeneration(
   request: NextRequest,
 ): Promise<UsageState> {
-  const admin = createSupabaseAdminClient();
   const access = await getAccessContext(request);
 
-  console.log("[usage] consumeRecipeGeneration START:", {
-    userId: access.userId?.substring(0, 8),
-    subjectKey: access.subjectKey.substring(0, 20),
-  });
-
   if (!access.userId) {
-    // Anônimo não pode gerar receitas
     return buildUsageState(0, 0, false, false);
   }
 
-  // Verificar acesso à feature
   const accessCheck = await canAccessFeature(access.userId, "recipe_generation");
-  
-  if (!accessCheck.allowed) {
-    const planInfo = await getUserPlanInfo(access.userId);
-    const used = planInfo?.recipeGenerationsUsed || 0;
-    const limit = planInfo?.recipeGenerationsLimit || 0;
-    
-    console.warn("[usage] Recipe generation blocked:", accessCheck.reason);
-    
-    return buildUsageState(
-      used,
-      limit,
-      planInfo?.planType === "pro",
-      true
-    );
-  }
-
-  // Incrementar contador se não for Pro (Pro é ilimitado)
   const planInfo = await getUserPlanInfo(access.userId);
-  
-  if (!planInfo) {
-    return buildUsageState(0, 0, false, false);
+  const limit = planInfo?.recipeGenerationsLimit || PLAN_LIMITS.recipe_generation.free;
+
+  if (!accessCheck.allowed) {
+    const used = planInfo?.recipeGenerationsUsed || 0;
+    console.warn("[usage] Recipe generation blocked:", accessCheck.reason);
+    return buildUsageState(used, limit, planInfo?.planType === "pro", true);
   }
 
-  // Pro tem acesso ilimitado
-  if (planInfo.planType === "pro") {
-    return buildUsageState(0, Number.POSITIVE_INFINITY, true, true);
+  if (!planInfo) return buildUsageState(0, 0, false, false);
+
+  const success = await incrementRecipeGeneration(access.userId);
+  if (!success) {
+    return buildUsageState(planInfo.recipeGenerationsUsed, limit, planInfo.planType === "pro", true);
   }
 
-  // Basic precisa incrementar
-  if (planInfo.planType === "basic") {
-    const success = await incrementRecipeGeneration(access.userId);
-    
-    if (!success) {
-      return buildUsageState(60, 60, false, true);
-    }
-
-    return buildUsageState(
-      planInfo.recipeGenerationsUsed + 1,
-      60,
-      false,
-      true
-    );
-  }
-
-  // Lifetime não tem acesso a geração por IA
-  return buildUsageState(0, 0, false, true);
+  return buildUsageState(
+    planInfo.recipeGenerationsUsed + 1,
+    limit,
+    planInfo.planType === "pro",
+    true,
+  );
 }
 
 export async function hasPremiumAccess(request: NextRequest) {
@@ -176,111 +145,35 @@ export async function hasPremiumAccess(request: NextRequest) {
 }
 
 /**
- * Verifica uso do meal planner
- * Pro: acesso ilimitado
- * Basic e Lifetime: bloqueado
+ * Consome uma utilização mensal de uma feature rastreada via usage_limits.
+ * Retorna { allowed, used, limit } após tentar incrementar.
  */
-export async function getMealPlanUsage(
-  request: NextRequest,
-): Promise<UsageState & { canGenerate: boolean }> {
-  const access = await getAccessContext(request);
-  
-  if (!access.userId) {
-    return {
-      ...buildUsageState(0, 0, false, false),
-      canGenerate: false,
-    };
-  }
+async function consumeMonthlyFeature(
+  userId: string,
+  subjectKey: string,
+  featureKey: string,
+  limit: number,
+): Promise<{ allowed: boolean; used: number; limit: number }> {
+  if (limit === 0) return { allowed: false, used: 0, limit: 0 };
 
-  const accessCheck = await canAccessFeature(access.userId, "planner");
-  const planInfo = await getUserPlanInfo(access.userId);
-
-  if (!accessCheck.allowed || !planInfo) {
-    // Buscar quantos meal plans o usuário já gerou este mês (free: 1 por mês)
-    const admin = createSupabaseAdminClient();
-    const usageMonth = getMonthKey();
-    const subjectKey = `${access.subjectKey}:meal_plan`;
-    
-    let usedCount = 0;
-    if (admin) {
-      const { data: existing } = await admin
-        .from("usage_limits")
-        .select("used_count")
-        .eq("subject_key", subjectKey)
-        .eq("usage_date", usageMonth)
-        .maybeSingle();
-      
-      usedCount = existing?.used_count || 0;
-    }
-    
-    // Free users podem gerar 1 planejamento por mês
-    const canGenerate = usedCount < 1;
-    
-    return {
-      ...buildUsageState(usedCount, 1, false, true),
-      canGenerate,
-    };
-  }
-
-  // Pro tem acesso ilimitado
-  return {
-    ...buildUsageState(0, Number.POSITIVE_INFINITY, true, true),
-    canGenerate: true,
-  };
-}
-
-/**
- * Consome uma geração de meal plan (apenas Pro)
- */
-export async function consumeMealPlanGeneration(
-  request: NextRequest,
-): Promise<UsageState & { canGenerate: boolean }> {
   const admin = createSupabaseAdminClient();
-  const access = await getAccessContext(request);
+  if (!admin) return { allowed: false, used: 0, limit };
 
-  // Premium users: unlimited
-  if (access.isPremium) {
-    return {
-      ...buildUsageState(0, 999, true, access.persisted),
-      canGenerate: true,
-    };
-  }
+  const usageMonth = getMonthKey();
+  const key = `${subjectKey}:${featureKey}`;
 
-  const freeMonthlyLimit = 1;
-
-  if (!admin) {
-    return {
-      ...buildUsageState(0, freeMonthlyLimit, false, false),
-      canGenerate: false,
-    };
-  }
-
-  const usageMonth = getMonthKey(); // YYYY-MM
-  const subjectKey = `${access.subjectKey}:meal_plan`;
-
-  const { data: existing, error } = await admin
+  const { data: existing } = await admin
     .from("usage_limits")
     .select("id, used_count")
-    .eq("subject_key", subjectKey)
+    .eq("subject_key", key)
     .eq("usage_date", usageMonth)
     .maybeSingle();
-
-  if (error) {
-    return {
-      ...buildUsageState(0, freeMonthlyLimit, false, true),
-      canGenerate: false,
-    };
-  }
 
   // @ts-ignore
   const currentCount = existing?.used_count ?? 0;
 
-  // Free users: block after 1 generation per month
-  if (currentCount >= freeMonthlyLimit) {
-    return {
-      ...buildUsageState(currentCount, freeMonthlyLimit, false, true),
-      canGenerate: false,
-    };
+  if (currentCount >= limit) {
+    return { allowed: false, used: currentCount, limit };
   }
 
   // @ts-ignore
@@ -288,27 +181,166 @@ export async function consumeMealPlanGeneration(
     await admin
       .from("usage_limits")
       // @ts-ignore
-      .update({ used_count: currentCount + 1, limit_count: freeMonthlyLimit })
+      .update({ used_count: currentCount + 1, limit_count: limit })
       // @ts-ignore
       .eq("id", existing.id);
+  } else {
+    // @ts-ignore
+    await admin.from("usage_limits").insert({
+      user_id: userId,
+      subject_key: key,
+      usage_date: usageMonth,
+      used_count: 1,
+      limit_count: limit,
+    });
+  }
 
+  return { allowed: true, used: currentCount + 1, limit };
+}
+
+/**
+ * Verifica uso do meal planner (sem consumir)
+ */
+export async function getMealPlanUsage(
+  request: NextRequest,
+): Promise<UsageState & { canGenerate: boolean }> {
+  const access = await getAccessContext(request);
+
+  if (!access.userId) {
+    return { ...buildUsageState(0, 0, false, false), canGenerate: false };
+  }
+
+  const planInfo = await getUserPlanInfo(access.userId);
+  const planType = planInfo?.planType ?? null;
+  const limit = getPlanLimit("planner", planType);
+  const accessCheck = await canAccessFeature(access.userId, "planner");
+
+  if (!accessCheck.allowed) {
+    return { ...buildUsageState(0, limit, false, true), canGenerate: false };
+  }
+
+  const admin = createSupabaseAdminClient();
+  const usageMonth = getMonthKey();
+  const key = `${access.subjectKey}:meal_plan`;
+  let usedCount = 0;
+  if (admin) {
+    const { data: existing } = await admin
+      .from("usage_limits")
+      .select("used_count")
+      .eq("subject_key", key)
+      .eq("usage_date", usageMonth)
+      .maybeSingle();
+    usedCount = (existing as any)?.used_count || 0;
+  }
+
+  const isPro = planType === "pro";
+  return {
+    ...buildUsageState(usedCount, limit, isPro, true),
+    canGenerate: usedCount < limit,
+  };
+}
+
+/**
+ * Consome uma geração de meal plan com limites por plano.
+ * free: 0, lifetime: 1/mês, basic: 6/mês, pro: 10/mês
+ */
+export async function consumeMealPlanGeneration(
+  request: NextRequest,
+): Promise<UsageState & { canGenerate: boolean }> {
+  const access = await getAccessContext(request);
+
+  if (!access.userId) {
+    return { ...buildUsageState(0, 0, false, false), canGenerate: false };
+  }
+
+  const planInfo = await getUserPlanInfo(access.userId);
+  const planType = planInfo?.planType ?? null;
+  const limit = getPlanLimit("planner", planType);
+
+  const accessCheck = await canAccessFeature(access.userId, "planner");
+  if (!accessCheck.allowed) {
+    return { ...buildUsageState(0, limit, false, true), canGenerate: false };
+  }
+
+  const result = await consumeMonthlyFeature(
+    access.userId,
+    access.subjectKey,
+    "meal_plan",
+    limit,
+  );
+
+  const isPro = planType === "pro";
+  return {
+    ...buildUsageState(result.used, result.limit, isPro, true),
+    canGenerate: result.allowed,
+  };
+}
+
+/**
+ * Consome um cálculo de macros por texto.
+ * free: 5/mês, lifetime: 10/mês, basic: 30/mês, pro: 60/mês
+ */
+export async function consumeMacroText(
+  request: NextRequest,
+): Promise<UsageState & { canGenerate: boolean }> {
+  const access = await getAccessContext(request);
+
+  if (!access.userId) {
+    return { ...buildUsageState(0, 0, false, false), canGenerate: false };
+  }
+
+  const planInfo = await getUserPlanInfo(access.userId);
+  const limit = getPlanLimit("macro_text", planInfo?.planType ?? null);
+
+  const result = await consumeMonthlyFeature(
+    access.userId,
+    access.subjectKey,
+    "macro_text",
+    limit,
+  );
+
+  const isPro = planInfo?.planType === "pro";
+  return {
+    ...buildUsageState(result.used, result.limit, isPro, true),
+    canGenerate: result.allowed,
+  };
+}
+
+/**
+ * Consome uma análise de foto por IA.
+ * free: 0, lifetime: 2/mês, basic: 15/mês, pro: 40/mês
+ */
+export async function consumePhotoAnalysis(
+  request: NextRequest,
+): Promise<UsageState & { canGenerate: boolean }> {
+  const access = await getAccessContext(request);
+
+  if (!access.userId) {
+    return { ...buildUsageState(0, 0, false, false), canGenerate: false };
+  }
+
+  const planInfo = await getUserPlanInfo(access.userId);
+  const planType = planInfo?.planType ?? null;
+
+  const accessCheck = await canAccessFeature(access.userId, "photo_analysis");
+  if (!accessCheck.allowed) {
     return {
-      ...buildUsageState(currentCount + 1, freeMonthlyLimit, false, true),
-      canGenerate: currentCount + 1 < freeMonthlyLimit,
+      ...buildUsageState(0, 0, false, true),
+      canGenerate: false,
     };
   }
 
-  // @ts-ignore
-  await admin.from("usage_limits").insert({
-    user_id: access.userId,
-    subject_key: subjectKey,
-    usage_date: usageMonth,
-    used_count: 1,
-    limit_count: freeMonthlyLimit,
-  });
+  const limit = getPlanLimit("photo_analysis", planType);
+  const result = await consumeMonthlyFeature(
+    access.userId,
+    access.subjectKey,
+    "photo_analysis",
+    limit,
+  );
 
+  const isPro = planType === "pro";
   return {
-    ...buildUsageState(1, freeMonthlyLimit, false, true),
-    canGenerate: false, // Used the only one allowed
+    ...buildUsageState(result.used, result.limit, isPro, true),
+    canGenerate: result.allowed,
   };
 }

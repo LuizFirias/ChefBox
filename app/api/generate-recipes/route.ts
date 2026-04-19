@@ -25,7 +25,7 @@ async function generateRecipesWithAi(input: GenerateRecipesInput, isPremium: boo
     { role: "system" as const, content: buildRecipeSystemPrompt() },
     { role: "user" as const, content: buildRecipeUserPrompt(input) },
   ];
-  const tiers: Array<"base" | "premium"> = isPremium ? ["premium"] : ["base", "premium"];
+  const tiers: Array<"base" | "premium"> = ["base", "premium"];
 
   console.log("[generate-recipes] Attempting AI generation with:", {
     dishType: input.dishType,

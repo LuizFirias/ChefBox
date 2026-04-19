@@ -6,6 +6,24 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { Feature, PlanType } from "@/lib/types";
 
+// ─── Limites por plano ────────────────────────────────────────────────────────
+export const PLAN_LIMITS = {
+  recipe_generation: { free: 5,   lifetime: 10, basic: 60,  pro: 150 },
+  macro_text:        { free: 5,   lifetime: 10, basic: 30,  pro: 60  },
+  planner:           { free: 0,   lifetime: 1,  basic: 6,   pro: 10  },
+  photo_analysis:    { free: 0,   lifetime: 2,  basic: 15,  pro: 40  },
+  saved_recipes:     { free: 5,   lifetime: Infinity, basic: Infinity, pro: Infinity },
+} as const;
+
+export function getPlanLimit(feature: keyof typeof PLAN_LIMITS, planType: PlanType | null): number {
+  const limits = PLAN_LIMITS[feature];
+  if (!planType || planType === "test") return limits.free;
+  if (planType === "lifetime") return limits.lifetime;
+  if (planType === "basic") return limits.basic;
+  if (planType === "pro") return limits.pro;
+  return limits.free;
+}
+
 /**
  * Dados completos do plano ativo do usuário
  */
@@ -18,6 +36,7 @@ export type UserPlanInfo = {
   recipeGenerationsUsed: number;
   recipeGenerationsLimit: number;
   generationCycleStart: Date | null;
+  savedRecipesCount?: number;
 };
 
 /**
@@ -30,51 +49,57 @@ export async function canAccessFeature(
   const planInfo = await getUserPlanInfo(userId);
   
   if (!planInfo) {
-    return { allowed: false, reason: "Usu\u00e1rio n\u00e3o encontrado" };
+    return { allowed: false, reason: "Usuário não encontrado" };
   }
 
   const { planType, planStatus } = planInfo;
-
-  // Sem plano ativo ou plano expirado
-  if (!planType || planStatus !== "active") {
-    return { allowed: false, reason: "Nenhum plano ativo" };
-  }
+  const isActive = planType && planStatus === "active";
 
   switch (feature) {
     case "fixed_recipes":
     case "basic_macros":
+    case "smart_market":
       return { allowed: true };
 
     case "saved_recipes":
+      if (isActive) return { allowed: true };
+      return { allowed: true }; // free pode salvar (limite checado no frontend)
+
+    case "recipe_generation": {
+      const limit = getPlanLimit("recipe_generation", planType);
+      if (limit === 0) return { allowed: false, reason: "Plano não inclui geração de receitas por IA" };
+      const used = planInfo.recipeGenerationsUsed || 0;
+      if (used >= limit) {
+        return { allowed: false, reason: `Limite de ${limit} receitas/mês atingido. Faça upgrade para continuar.` };
+      }
       return { allowed: true };
+    }
 
-    case "recipe_generation":
-      if (planType === "lifetime") {
-        return { allowed: false, reason: "Plano Lifetime n\u00e3o inclui gera\u00e7\u00e3o com IA" };
-      }
-      if (planType === "basic" || planType === "test") {
-        if (planInfo.recipeGenerationsUsed >= 60) {
-          return { allowed: false, reason: "Limite de 60 receitas/m\u00eas atingido" };
-        }
-        return { allowed: true };
-      }
-      if (planType === "pro") {
-        return { allowed: true };
-      }
-      return { allowed: false };
+    case "macro_text": {
+      const limit = getPlanLimit("macro_text", planType);
+      if (limit === 0) return { allowed: false, reason: "Plano não inclui cálculo de macros por texto" };
+      return { allowed: true };
+    }
 
-    case "planner":
-    case "smart_market":
+    case "photo_analysis": {
+      const limit = getPlanLimit("photo_analysis", planType);
+      if (limit === 0) return { allowed: false, reason: "Análise de foto por IA está disponível a partir do Plano Vitalício." };
+      if (!isActive) return { allowed: false, reason: "Análise de foto por IA está disponível a partir do Plano Vitalício." };
+      return { allowed: true };
+    }
+
+    case "planner": {
+      const limit = getPlanLimit("planner", planType);
+      if (limit === 0 || !isActive) return { allowed: false, reason: "Planejador semanal não está disponível no plano gratuito." };
+      return { allowed: true };
+    }
+
     case "detailed_macros":
     case "recipe_history":
-      if (planType === "pro") {
-        return { allowed: true };
-      }
-      return { 
-        allowed: false, 
-        reason: planType === "lifetime" 
-          ? "Recurso dispon\u00edvel apenas no Plano Pro" 
-          : "Fa\u00e7a upgrade para o Plano Pro" 
+      if (planType === "pro" && isActive) return { allowed: true };
+      return {
+        allowed: false,
+        reason: "Recurso disponível apenas no Plano Pro",
       };
 
     default:
@@ -122,7 +147,7 @@ export async function getUserPlanInfo(userId: string): Promise<UserPlanInfo | nu
       planStatus: "none",
       planEndDate: null,
       recipeGenerationsUsed: (userData as any).recipe_generations_used || 0,
-      recipeGenerationsLimit: 0,
+      recipeGenerationsLimit: PLAN_LIMITS.recipe_generation.free,
       generationCycleStart: null,
     };
   }
@@ -140,7 +165,7 @@ export async function getUserPlanInfo(userId: string): Promise<UserPlanInfo | nu
       planStatus: "expired",
       planEndDate: null,
       recipeGenerationsUsed: (userData as any).recipe_generations_used || 0,
-      recipeGenerationsLimit: 0,
+      recipeGenerationsLimit: PLAN_LIMITS.recipe_generation.free,
       generationCycleStart: null,
     };
   }
@@ -155,7 +180,7 @@ export async function getUserPlanInfo(userId: string): Promise<UserPlanInfo | nu
     planStatus: isExpired ? "expired" : "active",
     planEndDate: endDate,
     recipeGenerationsUsed: (userData as any).recipe_generations_used || 0,
-    recipeGenerationsLimit: (userData as any).recipe_generations_limit || 0,
+    recipeGenerationsLimit: getPlanLimit("recipe_generation", (activeSub as any).plan_type),
     generationCycleStart: (userData as any).generation_cycle_start 
       ? new Date((userData as any).generation_cycle_start) 
       : null,
@@ -167,35 +192,22 @@ export async function getUserPlanInfo(userId: string): Promise<UserPlanInfo | nu
  */
 export async function incrementRecipeGeneration(userId: string): Promise<boolean> {
   const planInfo = await getUserPlanInfo(userId);
-  
-  if (!planInfo || planInfo.planType === "lifetime") {
-    return false;
-  }
+  if (!planInfo) return false;
 
-  if (planInfo.planType === "pro") {
-    return true;
-  }
+  const limit = getPlanLimit("recipe_generation", planInfo.planType);
+  if (limit === 0) return false;
+  if (planInfo.recipeGenerationsUsed >= limit) return false;
 
-  if (planInfo.planType === "basic" || planInfo.planType === "test") {
-    if (planInfo.recipeGenerationsUsed >= 60) {
-      return false;
-    }
+  const admin = createSupabaseAdminClient();
+  if (!admin) return false;
 
-    const admin = createSupabaseAdminClient();
-    if (!admin) return false;
+  // @ts-ignore - fields added in migration 006
+  await admin
+    .from("users")
+    .update({ recipe_generations_used: planInfo.recipeGenerationsUsed + 1 } as any)
+    .eq("id", userId);
 
-    // @ts-ignore - fields added in migration 006
-    await admin
-      .from("users")
-      .update({
-        recipe_generations_used: planInfo.recipeGenerationsUsed + 1,
-      } as any)
-      .eq("id", userId);
-
-    return true;
-  }
-
-  return false;
+  return true;
 }
 
 /**

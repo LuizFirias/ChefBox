@@ -201,7 +201,9 @@ export type Feature =
   | "fixed_recipes"
   | "basic_macros"
   | "detailed_macros"
-  | "saved_recipes";
+  | "saved_recipes"
+  | "macro_text"
+  | "photo_analysis";
 
 // Mapeamento de produtos Yampi para planos
 export const YAMPI_PRODUCT_MAP: Record<string, { planType: PlanType; planPeriod: PlanPeriod; price: number }> = {

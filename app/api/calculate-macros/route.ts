@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateStructuredJson } from "@/lib/ai/client";
+import { consumeMacroText } from "@/lib/usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,6 +85,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Você precisa estar logado para usar a calculadora" },
         { status: 401 }
+      );
+    }
+
+    // Verificar e consumir cota mensal de macros por texto
+    const usage = await consumeMacroText(request);
+    if (!usage.canGenerate) {
+      return NextResponse.json(
+        {
+          error: `Você atingiu o limite de ${usage.limit} cálculos de macros por texto este mês. Faça upgrade para continuar.`,
+          upgradeRequired: true,
+          usage,
+        },
+        { status: 402 }
       );
     }
 

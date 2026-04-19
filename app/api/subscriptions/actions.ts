@@ -192,7 +192,7 @@ export async function createSubscription(params: CreateSubscriptionParams) {
       plan_period: period,
       plan_status: 'active',
       plan_end_date: endDate.toISOString(),
-      recipe_generations_limit: plan === 'pro' ? 999999 : 60,
+      recipe_generations_limit: plan === 'pro' ? 150 : 60,
       recipe_generations_used: 0,
       generation_cycle_start: startDate.toISOString(),
     }).eq('id', userId).select()

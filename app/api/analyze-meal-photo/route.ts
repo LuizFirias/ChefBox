@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { consumePhotoAnalysis } from "@/lib/usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -156,6 +157,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Você precisa estar logado para usar a calculadora" },
         { status: 401 }
+      );
+    }
+
+    // Verificar e consumir cota mensal de análise de foto
+    const usage = await consumePhotoAnalysis(request);
+    if (!usage.canGenerate) {
+      return NextResponse.json(
+        {
+          error: usage.limit === 0
+            ? "Análise de foto por IA está disponível a partir do Plano Vitalício."
+            : `Você atingiu o limite de ${usage.limit} análises de foto este mês. Faça upgrade para continuar.`,
+          upgradeRequired: true,
+          usage,
+        },
+        { status: 402 }
       );
     }
 

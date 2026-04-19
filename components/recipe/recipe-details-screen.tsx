@@ -8,7 +8,8 @@ import { useSearchParams } from "next/navigation";
 
 import { AppButton } from "@/components/ui/app-button";
 import { Tabs } from "@/components/ui/tabs";
-import { getRecipeById, isRecipeSaved, saveRecipe } from "@/lib/app-storage";
+import { getRecipeById, getSavedRecipes, isRecipeSaved, saveRecipe } from "@/lib/app-storage";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
 import type { Recipe } from "@/lib/types";
 
 const fallbackRecipe: Recipe = {
@@ -141,6 +142,7 @@ export function RecipeDetailsScreen() {
   const [recipe, setRecipe] = useState<Recipe>(fallbackRecipe);
   const [saved, setSaved] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<"image" | "pdf" | null>(null);
+  const { isPremium } = useAccessControl();
 
   useEffect(() => {
     const recipeId = searchParams.get("recipe");
@@ -157,6 +159,11 @@ export function RecipeDetailsScreen() {
   }, [searchParams]);
 
   function handleSaveRecipe() {
+    const FREE_SAVE_LIMIT = 5;
+    if (!isPremium && getSavedRecipes().length >= FREE_SAVE_LIMIT) {
+      alert(`No plano gratuito você pode salvar até ${FREE_SAVE_LIMIT} receitas. Faça upgrade para salvar mais.`);
+      return;
+    }
     saveRecipe(recipe);
     setSaved(true);
   }
