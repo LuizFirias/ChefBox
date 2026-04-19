@@ -238,7 +238,11 @@ export function getMealPlan<T extends MealPlanResponse & { source?: "ai" | "fall
 }
 
 export function saveMealPlan<T extends MealPlanResponse & { source?: "ai" | "fallback" }>(plan: T) {
-  writeJson(MEAL_PLAN_KEY, plan);
+  const withTimestamp = {
+    plan,
+    generatedAt: Date.now()
+  };
+  writeJson(MEAL_PLAN_KEY, withTimestamp);
 }
 
 export function getMealPlanSettings(defaults: MealPlanSettings) {

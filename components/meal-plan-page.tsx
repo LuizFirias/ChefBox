@@ -412,7 +412,8 @@ export function MealPlanPage() {
               <button
                 type="button"
                 onClick={() => setShowSettings((current) => !current)}
-                className="inline-flex min-h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600"
+                disabled={!!(usageInfo && !usageInfo.canGenerate && !usageInfo.isPremium)}
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
               >
                 Editar parâmetros
               </button>
@@ -454,23 +455,22 @@ export function MealPlanPage() {
         )}
 
         {usageInfo && !usageInfo.canGenerate && !usageInfo.isPremium ? (
-          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">⚠️</span>
+          <div className="mb-4 rounded-xl border border-[#FF6B35]/20 bg-gradient-to-r from-[#FFF9F3] to-[#FFE5D9] px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
-                <p className="font-semibold text-amber-900">
-                  Limite mensal atingido
+                <p className="text-sm font-semibold text-[#2D3142]">
+                  ⚠️ Limite mensal atingido — Você já gerou {usageInfo.used}/{usageInfo.limit} planejamento{usageInfo.limit > 1 ? 's' : ''}
                 </p>
-                <p className="mt-1 text-sm text-amber-800">
-                  Você já gerou {usageInfo.used} {usageInfo.used === 1 ? 'planejamento' : 'planejamentos'} este mês. Usuários gratuitos têm direito a 1 geração por mês.
+                <p className="mt-0.5 text-xs text-slate-600">
+                  Planos anuais com até <span className="font-bold text-[#FF6B35]">50% de desconto</span>
                 </p>
-                <button
-                  onClick={() => setShowPaywall(true)}
-                  className="mt-3 inline-flex items-center rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800"
-                >
-                  ✨ Upgrade para Premium
-                </button>
               </div>
+              <button
+                onClick={() => setShowPaywall(true)}
+                className="shrink-0 rounded-xl bg-[#8B4513] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#A0522D]"
+              >
+                ✨ Upgrade para Premium
+              </button>
             </div>
           </div>
         ) : null}

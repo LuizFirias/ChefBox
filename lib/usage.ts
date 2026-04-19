@@ -213,9 +213,12 @@ export async function getMealPlanUsage(
       usedCount = existing?.used_count || 0;
     }
     
+    // Free users podem gerar 1 planejamento por mês
+    const canGenerate = usedCount < 1;
+    
     return {
       ...buildUsageState(usedCount, 1, false, true),
-      canGenerate: false,
+      canGenerate,
     };
   }
 
