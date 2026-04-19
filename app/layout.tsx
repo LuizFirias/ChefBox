@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Source_Serif_4, Space_Grotesk } from "next/font/google";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 
 import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
@@ -8,14 +8,10 @@ import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
 
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const sourceSerif = Source_Serif_4({
-  variable: "--font-source-serif",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -49,7 +45,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       data-scroll-behavior="smooth"
-      className={`${spaceGrotesk.variable} ${sourceSerif.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#F7F9FB] text-[#2D3142]">
         {process.env.NODE_ENV !== "production" ? (

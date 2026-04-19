@@ -1,18 +1,26 @@
 @import "tailwindcss";
 
 :root {
+  /* === TYPOGRAPHY === */
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  
   /* === BACKGROUND COLORS === */
   --background: #f7f9fb;
   --foreground: #2d3142;
 
-  /* === PRIMARY COLORS === */
-  --color-primary: #F4713A;
-  --color-primary-hover: #E85D20;
-  --color-primary-light: #FFF4EE;
-  --color-primary-border: #FDDCC8;
+  /* === PRIMARY COLORS (Laranja) === */
+  --color-primary: #E05A2B;
+  --color-primary-hover: #C54E24;
+  --color-primary-light: #FFF7ED;
+  --color-primary-border: #FED7AA;
+
+  /* === SUCCESS COLORS (Verde) === */
+  --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-success-dark: #15803D;
 
   /* === NEUTRAL COLORS === */
-  --color-dark: #2D3142;
+  --color-dark: #111827;
   --color-dark-hover: #1E2233;
 
   --color-gray-50: #F9FAFB;
@@ -21,7 +29,9 @@
   --color-gray-300: #D1D5DB;
   --color-gray-400: #9CA3AF;
   --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
   --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
   --color-gray-900: #111827;
 
   /* === BACKGROUND TOKENS === */
@@ -41,9 +51,9 @@
 
   /* === SHADOW TOKENS === */
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
-  --shadow-primary: 0 4px 14px rgba(244, 113, 58, 0.35);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.15);
+  --shadow-primary: 0 4px 14px rgba(224, 90, 43, 0.35);
 
   /* === SPACING === */
   --space-1: 4px;
@@ -88,8 +98,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-space-grotesk);
-  --font-serif: var(--font-source-serif);
+  --font-sans: var(--font-inter);
 }
 
 * {
@@ -101,9 +110,14 @@ html {
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--foreground);
-  font-family: var(--font-space-grotesk), sans-serif;
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 

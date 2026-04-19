@@ -423,31 +423,57 @@ export function MealPlanPage() {
         
         {/* Bloqueio de acesso para não-Pro */}
         {!accessLoading && !hasAccess && (
-          <div className="mb-6 rounded-[32px] border-2 border-[#FF6B35] bg-gradient-to-br from-[#FFF9F3] to-[#FFE5D9] p-8 shadow-lg">
-            <div className="flex flex-col items-center text-center">
-              <div className="rounded-full bg-gradient-to-r from-[#FF6B35] to-[#FF8C42] p-4 text-white">
-                <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+          <div className="mb-6 rounded-[20px] border border-[#FED7AA] bg-gradient-to-r from-[#FFF7ED] to-[#FFEDD5] p-6 shadow-md">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-[#111827]">
+                  🍽️ Planejador Semanal Exclusivo
+                </h2>
+                <p className="mt-2 text-sm text-[#6B7280]">
+                  Crie planos personalizados para 7 dias com lista de compras automática
+                </p>
+                
+                {/* Checklist de features */}
+                <ul className="mt-3 grid gap-1.5 text-sm text-[#374151] sm:grid-cols-2">
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4 shrink-0 text-[#16A34A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="m5 13 4 4L19 7" />
+                    </svg>
+                    7 dias planejados
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4 shrink-0 text-[#16A34A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="m5 13 4 4L19 7" />
+                    </svg>
+                    Lista de compras
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4 shrink-0 text-[#16A34A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="m5 13 4 4L19 7" />
+                    </svg>
+                    Variação de refeições
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4 shrink-0 text-[#16A34A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="m5 13 4 4L19 7" />
+                    </svg>
+                    Controle de macros
+                  </li>
+                </ul>
               </div>
-              <h2 className="mt-4 text-2xl font-bold text-[#2D3142]">
-                Planejador Semanal Exclusivo
-              </h2>
-              <p className="mt-3 max-w-lg text-base text-slate-600">
-                {accessReason || "O planejamento semanal é exclusivo para assinantes do Plano Pro. Crie planos personalizados com lista de compras e rotina de meal prep."}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3 justify-center">
+              
+              <div className="flex flex-col gap-2 md:items-end">
                 <button
                   onClick={() => setShowPaywall(true)}
-                  className="inline-flex items-center rounded-full bg-gradient-to-r from-[#FF6B35] to-[#FF8C42] px-6 py-3 font-semibold text-white transition hover:opacity-90"
+                  className="w-full rounded-xl bg-[#E05A2B] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#C54E24] md:w-auto"
                 >
-                  ✨ Fazer upgrade para Pro
+                  Desbloquear por R$24,90/mês
                 </button>
                 <Link
-                  href="/"
-                  className="inline-flex items-center rounded-full border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-700 transition hover:border-slate-400"
+                  href="/planos"
+                  className="text-center text-sm font-medium text-[#E05A2B] transition hover:underline"
                 >
-                  ← Voltar para receitas
+                  Ver todos os planos →
                 </Link>
               </div>
             </div>

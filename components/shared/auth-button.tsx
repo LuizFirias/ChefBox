@@ -62,19 +62,15 @@ export function AuthButton() {
 
   if (userEmail) {
     return (
-      <div className="flex items-center gap-3">
-        <span className="hidden text-sm font-medium text-stone-700 sm:inline">
-          {userEmail}
-        </span>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-stone-300 bg-white/80 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoggingOut ? "Saindo..." : "Sair"}
-        </button>
-      </div>
+      <Link
+        href="/"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#E05A2B] to-[#FF8C42] text-white shadow-md transition hover:shadow-lg"
+        title="Ir para início"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </Link>
     );
   }
 
