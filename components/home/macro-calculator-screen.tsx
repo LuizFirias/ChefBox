@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
+
 type MacroResult = {
   food: string;
   quantity: string;
@@ -44,6 +46,9 @@ const MEAL_LABELS: Record<MealType, string> = {
 };
 
 export function MacroCalculatorScreen({ isPremium }: MacroCalculatorScreenProps) {
+  const { planInfo } = useAccessControl();
+  const canUsePhoto = (planInfo?.photoAnalysisLimit ?? 0) > 0;
+
   const [inputMode, setInputMode] = useState<"text" | "photo">("text");
   const [textInput, setTextInput] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -292,9 +297,13 @@ export function MacroCalculatorScreen({ isPremium }: MacroCalculatorScreenProps)
           </button>
           <button
             type="button"
-            onClick={() => setInputMode("photo")}
+            onClick={() => canUsePhoto && setInputMode("photo")}
+            disabled={!canUsePhoto}
+            title={!canUsePhoto ? "Disponível a partir do Plano Vitalício" : undefined}
             className={`flex-1 rounded-2xl px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold transition-all ${
-              inputMode === "photo"
+              !canUsePhoto
+                ? "cursor-not-allowed opacity-50 bg-slate-100 text-slate-600"
+                : inputMode === "photo"
                 ? "bg-[#FF6B35] text-white shadow-md"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
